@@ -158,8 +158,8 @@ BEGIN
 
   -- 3. INSERTION D''ÉVÉNEMENTS COMMUNAUTAIRES
   INSERT INTO events (
-    id, organization_id, title, slug, description, location_name, location_address,
-    city, start_date, end_date, is_free, price, currency, max_participants, status
+    id, organization_id, title, slug, description, venue, location,
+    start_date, end_date, capacity, registration_fee, currency, status, is_public
   ) VALUES
   (
     evt_aec,
@@ -167,8 +167,15 @@ BEGIN
     'Grande dictée solidaire et distribution de manuels scolaires',
     'grande-dictee-solidaire-bacongo',
     'Événement culturel et éducatif réunissant 200 élèves des écoles de Bacongo et Makélékélé avec remise de prix d''excellence.',
-    'Maison Commune de Bacongo', 'Place de la Mairie, Bacongo', 'Brazzaville',
-    now() + interval '12 days', now() + interval '12 days 4 hours', true, 0, 'XAF', 200, 'active'
+    'Maison Commune de Bacongo',
+    'Place de la Mairie, Bacongo, Brazzaville',
+    now() + interval '12 days',
+    now() + interval '12 days 4 hours',
+    200,
+    0,
+    'XAF',
+    'active',
+    true
   ),
   (
     evt_sopn,
@@ -176,8 +183,15 @@ BEGIN
     'Marathon Solidaire de la Côte Sauvage pour les orphelins',
     'marathon-solidaire-cote-sauvage',
     'Course populaire de 5km et 10km le long de la Côte Sauvage pour lever des fonds en faveur des structures d''accueil de l''enfance.',
-    'Plage de la Côte Sauvage', 'Boulevard du Général de Gaulle', 'Pointe-Noire',
-    now() + interval '20 days', now() + interval '20 days 6 hours', false, 2000, 'XAF', 500, 'active'
+    'Plage de la Côte Sauvage',
+    'Boulevard du Général de Gaulle, Pointe-Noire',
+    now() + interval '20 days',
+    now() + interval '20 days 6 hours',
+    500,
+    2000,
+    'XAF',
+    'active',
+    true
   ),
   (
     evt_asev,
@@ -185,8 +199,15 @@ BEGIN
     'Journée de dépistage gratuit du paludisme et distribution de moustiquaires',
     'depistage-gratuit-paludisme-kinkala',
     'Consultations médicales ouvertes à tous les habitants du district de Kinkala avec remise de moustiquaires imprégnées.',
-    'Place du Marché Central', 'Avenue Principale', 'Kinkala',
-    now() + interval '18 days', now() + interval '18 days 8 hours', true, 0, 'XAF', 350, 'active'
+    'Place du Marché Central',
+    'Avenue Principale, Kinkala, Pool',
+    now() + interval '18 days',
+    now() + interval '18 days 8 hours',
+    350,
+    0,
+    'XAF',
+    'active',
+    true
   )
   ON CONFLICT (organization_id, slug) DO UPDATE SET
     title = EXCLUDED.title,
@@ -222,7 +243,7 @@ BEGIN
   DELETE FROM donations WHERE organization_id = org_aec;
   INSERT INTO donations (
     organization_id, campaign_id, amount, tip_amount, currency, donor_name, donor_email,
-    donor_phone, provider, status, receipt_number, created_at
+    donor_phone, payment_provider, status, receipt_number, created_at
   ) VALUES
   (org_aec, camp_aec1, 100000, 2000, 'XAF', 'Entreprise Congo BTP', 'contact@congo-btp.cg', '+242 06 611 00 22', 'mtn_momo', 'completed', 'REC-2026-B101', now() - interval '1 hour'),
   (org_aec, camp_aec2, 50000, 1000, 'XAF', 'Anonyme', 'anonyme@assocongo.cg', '+242 04 422 33 44', 'airtel_money', 'completed', 'REC-2026-B102', now() - interval '4 hours'),
