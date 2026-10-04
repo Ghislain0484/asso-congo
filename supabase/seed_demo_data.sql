@@ -1,17 +1,8 @@
 -- ==============================================================================
--- ASSOCONGO - SCRIPT COMPLET D'INJECTION DES DONNÉES DE DÉMONSTRATION "GRANDEUR NATURE"
+-- ASSOCONGO - SCRIPT D'INJECTION DES DONNÉES DE DÉMONSTRATION "GRANDEUR NATURE"
 -- République du Congo (Brazzaville) 🇨🇬
 -- ==============================================================================
--- Ce script :
--- 1. Nettoie les anciennes données de test sans conflit de clés étrangères
--- 2. Initialise 3 ONG emblématiques (Brazzaville, Pointe-Noire, Pool)
--- 3. Associe tous les comptes de démo créés (DGIFN, Développeur, Association, Membre)
--- 4. Injecte des campagnes avec montants et cibles réalistes en FCFA (XAF)
--- 5. Injecte des événements communautaires à Brazzaville et Pointe-Noire
--- 6. Injecte les adhérents et bénévoles dans le CRM avec cartes de membres
--- 7. Injecte les dons et transactions Mobile Money (MTN MoMo *105# & Airtel Money *128#)
--- 8. Met à jour les règles RLS pour permettre au Régulateur DGIFN et au Développeur
---    de tout voir en mode audit (super_admin)
+-- Version ultra-robuste avec suppression par ID + Slugs + ON CONFLICT
 -- ==============================================================================
 
 DO $$
@@ -71,15 +62,22 @@ BEGIN
     ON CONFLICT (id) DO UPDATE SET full_name = EXCLUDED.full_name;
   END IF;
 
-  -- 2. Nettoyage préalable propre des anciennes données démo
-  DELETE FROM transactions WHERE organization_id IN (org_aec, org_sopn, org_asev);
-  DELETE FROM donations WHERE organization_id IN (org_aec, org_sopn, org_asev);
-  DELETE FROM event_registrations WHERE organization_id IN (org_aec, org_sopn, org_asev);
-  DELETE FROM events WHERE organization_id IN (org_aec, org_sopn, org_asev);
-  DELETE FROM campaigns WHERE organization_id IN (org_aec, org_sopn, org_asev);
-  DELETE FROM members WHERE organization_id IN (org_aec, org_sopn, org_asev);
+  -- 2. Nettoyage ordonné et complet par ID ET par SLUG (supprime toute trace antérieure)
+  DELETE FROM transactions WHERE donation_id IN (don_1, don_2, don_3, don_4, don_5) OR organization_id IN (org_aec, org_sopn, org_asev);
+  DELETE FROM donations WHERE id IN (don_1, don_2, don_3, don_4, don_5) OR organization_id IN (org_aec, org_sopn, org_asev);
+  DELETE FROM event_registrations WHERE event_id IN (evt_dictee, evt_code, evt_marathon) OR organization_id IN (org_aec, org_sopn, org_asev);
+  DELETE FROM events WHERE id IN (evt_dictee, evt_code, evt_marathon) 
+                     OR slug IN ('grande-dictee-solidaire-bacongo', 'atelier-code-robotique-jeunes', 'marathon-solidaire-cote-sauvage', 'depistage-gratuit-paludisme-kinkala') 
+                     OR organization_id IN (org_aec, org_sopn, org_asev);
+  DELETE FROM campaigns WHERE id IN (cmp_bacongo, cmp_filles, cmp_talangai, cmp_pnr) 
+                        OR slug IN ('renovation-ecole-bacongo', 'bourses-numeriques-filles', 'kits-scolaires-talangai', 'cantine-solidaire-tie-tie') 
+                        OR organization_id IN (org_aec, org_sopn, org_asev);
+  DELETE FROM members WHERE card_number IN ('CG-2026-00101', 'CG-2026-00102', 'CG-2026-00103', 'CG-2026-00104', 'CG-2026-00105', 'CG-2026-00201') 
+                     OR email IN ('adherent@espoircongo.cg', 'arsene.loundou@gmail.com', 'carine.massamba@yahoo.fr', 'dieu.nzamba@hotmail.com', 'priscille.b@gmail.com', 'jp.mabiala@gmail.com')
+                     OR organization_id IN (org_aec, org_sopn, org_asev);
   DELETE FROM organization_members WHERE organization_id IN (org_aec, org_sopn, org_asev);
-  DELETE FROM organizations WHERE id IN (org_aec, org_sopn, org_asev) OR slug IN ('espoir-congo', 'orphelins-pnr', 'sante-environnement-pool');
+  DELETE FROM organizations WHERE id IN (org_aec, org_sopn, org_asev) 
+                           OR slug IN ('espoir-congo', 'orphelins-pnr', 'sante-environnement-pool');
 
   -- 3. Insérer les Organisations congolaises
   INSERT INTO organizations (
@@ -146,7 +144,24 @@ BEGIN
     true,
     '#009543',
     88
-  );
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    slug = EXCLUDED.slug,
+    description = EXCLUDED.description,
+    province = EXCLUDED.province,
+    city = EXCLUDED.city,
+    address = EXCLUDED.address,
+    phone = EXCLUDED.phone,
+    email = EXCLUDED.email,
+    website = EXCLUDED.website,
+    legal_status = EXCLUDED.legal_status,
+    registration_number = EXCLUDED.registration_number,
+    domains = EXCLUDED.domains,
+    status = EXCLUDED.status,
+    is_verified = EXCLUDED.is_verified,
+    primary_color = EXCLUDED.primary_color,
+    transparency_score = EXCLUDED.transparency_score;
 
   -- 4. Associer les utilisateurs démo aux membres de l'organisation AEC
   IF v_asso_user IS NOT NULL THEN
@@ -238,7 +253,16 @@ BEGIN
     true,
     now() - interval '15 days',
     now() + interval '45 days'
-  );
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    organization_id = EXCLUDED.organization_id,
+    title = EXCLUDED.title,
+    slug = EXCLUDED.slug,
+    description = EXCLUDED.description,
+    goal_amount = EXCLUDED.goal_amount,
+    current_amount = EXCLUDED.current_amount,
+    category = EXCLUDED.category,
+    status = EXCLUDED.status;
 
   -- 6. Insérer les Événements (venue, location, capacity, registration_fee)
   INSERT INTO events (
@@ -293,7 +317,19 @@ BEGIN
     'XAF',
     'active',
     true
-  );
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    organization_id = EXCLUDED.organization_id,
+    title = EXCLUDED.title,
+    slug = EXCLUDED.slug,
+    description = EXCLUDED.description,
+    venue = EXCLUDED.venue,
+    location = EXCLUDED.location,
+    start_date = EXCLUDED.start_date,
+    end_date = EXCLUDED.end_date,
+    capacity = EXCLUDED.capacity,
+    registration_fee = EXCLUDED.registration_fee,
+    status = EXCLUDED.status;
 
   -- 7. Insérer les Membres du CRM
   INSERT INTO members (
@@ -369,7 +405,13 @@ BEGIN
     don_5, org_aec, cmp_bacongo, 'Dr. Christian Mabiala', 'mabiala.doc@cg-sante.org', '+242 06 612 00 99',
     false, 250000, 5000, 'XAF', 'Don institutionnel pour les latrines scolaires.', 'completed',
     'cash', 'REC-2026-00985', true
-  );
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    organization_id = EXCLUDED.organization_id,
+    campaign_id = EXCLUDED.campaign_id,
+    amount = EXCLUDED.amount,
+    status = EXCLUDED.status,
+    payment_provider = EXCLUDED.payment_provider;
 
   -- 9. Insérer les Transactions réelles (avec traçabilité financière)
   INSERT INTO transactions (
@@ -426,7 +468,6 @@ BEGIN
 END $$;
 
 -- 10. POLITIQUES RLS ÉTENDUES POUR SUPER_ADMIN (DGIFN & DÉVELOPPEURS)
--- Permet à la DGIFN et au Support Technique de voir toutes les organisations, membres, campagnes et transactions
 CREATE OR REPLACE FUNCTION public.is_super_admin()
 RETURNS boolean AS $$
 BEGIN
@@ -438,32 +479,26 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Autoriser super_admin à consulter toutes les organisations
 DROP POLICY IF EXISTS "orgs_select_super_admin" ON organizations;
 CREATE POLICY "orgs_select_super_admin" ON organizations FOR SELECT TO authenticated
   USING (public.is_super_admin());
 
--- Autoriser super_admin à consulter toutes les campagnes
 DROP POLICY IF EXISTS "campaigns_select_super_admin" ON campaigns;
 CREATE POLICY "campaigns_select_super_admin" ON campaigns FOR SELECT TO authenticated
   USING (public.is_super_admin());
 
--- Autoriser super_admin à consulter tous les membres
 DROP POLICY IF EXISTS "members_select_super_admin" ON members;
 CREATE POLICY "members_select_super_admin" ON members FOR SELECT TO authenticated
   USING (public.is_super_admin());
 
--- Autoriser super_admin à consulter tous les événements
 DROP POLICY IF EXISTS "events_select_super_admin" ON events;
 CREATE POLICY "events_select_super_admin" ON events FOR SELECT TO authenticated
   USING (public.is_super_admin());
 
--- Autoriser super_admin à consulter toutes les transactions
 DROP POLICY IF EXISTS "tx_select_super_admin" ON transactions;
 CREATE POLICY "tx_select_super_admin" ON transactions FOR SELECT TO authenticated
   USING (public.is_super_admin());
 
--- Autoriser super_admin à consulter tous les dons
 DROP POLICY IF EXISTS "donations_select_super_admin" ON donations;
 CREATE POLICY "donations_select_super_admin" ON donations FOR SELECT TO authenticated
   USING (public.is_super_admin());
