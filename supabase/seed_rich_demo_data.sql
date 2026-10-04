@@ -31,6 +31,15 @@ BEGIN
   -- Récupérer l'utilisateur contact@espoircongo.cg s'il existe
   SELECT id INTO v_asso_user FROM auth.users WHERE email = 'contact@espoircongo.cg';
 
+  -- Nettoyage préalable des organisations démo pour garantir des IDs exacts
+  DELETE FROM organizations WHERE slug IN (
+    'espoir-congo',
+    'bassin-du-congo-vert',
+    'solidarite-ocean-pointe-noire',
+    'action-sante-eau-vivante',
+    'voix-des-femmes-congo'
+  );
+
   -- 1. INSERTION DES 5 ORGANISATIONS CONGOLAISES
   INSERT INTO organizations (
     id, name, acronym, slug, description, province, city, address, phone, email,
@@ -80,12 +89,7 @@ BEGIN
     'Autonomisation financière des femmes maraîchères du Niari via des coopératives solaires et des micro-crédits rotatifs.',
     'Niari', 'Dolisie', 'Quartier Gaïa', '+242 04 430 90 12', 'vfe.dolisie@gmail.com',
     'enregistree', 'REC-DOL-2024-FEM12', ARRAY['Femmes et genre', 'Microfinance', 'Sécurité alimentaire'], 'active', true, '#DC241F', 94
-  )
-  ON CONFLICT (slug) DO UPDATE SET
-    name = EXCLUDED.name,
-    description = EXCLUDED.description,
-    transparency_score = EXCLUDED.transparency_score,
-    is_verified = EXCLUDED.is_verified;
+  );
 
   -- Lier l'utilisateur démo à Espoir Congo
   IF v_asso_user IS NOT NULL THEN
