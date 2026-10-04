@@ -31,7 +31,10 @@ export default function EventsPage() {
   const [registrationFee, setRegistrationFee] = useState(0);
 
   const loadEvents = async () => {
-    if (!currentOrg) return;
+    if (!currentOrg) {
+      setLoading(false);
+      return;
+    }
     const { data } = await supabase
       .from('events')
       .select('*')

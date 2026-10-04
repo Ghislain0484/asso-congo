@@ -33,7 +33,10 @@ export default function MembersPage() {
   const [membershipFee, setMembershipFee] = useState(0);
 
   const loadMembers = async () => {
-    if (!currentOrg) return;
+    if (!currentOrg) {
+      setLoading(false);
+      return;
+    }
     const { data, error } = await supabase
       .from('members')
       .select('*')

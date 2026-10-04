@@ -18,7 +18,10 @@ export default function TransactionsPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
   useEffect(() => {
-    if (!currentOrg) return;
+    if (!currentOrg) {
+      setLoading(false);
+      return;
+    }
     (async () => {
       const { data } = await supabase
         .from('transactions')

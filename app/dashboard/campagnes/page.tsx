@@ -30,7 +30,10 @@ export default function CampaignsPage() {
   const [endDate, setEndDate] = useState('');
 
   const loadCampaigns = async () => {
-    if (!currentOrg) return;
+    if (!currentOrg) {
+      setLoading(false);
+      return;
+    }
     const { data } = await supabase
       .from('campaigns')
       .select('*')

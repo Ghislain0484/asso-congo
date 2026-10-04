@@ -59,7 +59,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setCurrentOrg(orgMembers[0].organization as Organization);
         }
       } else {
-        setOrganizations([]);
+        // Fallback automatique : pour les super_admin (DGIFN / Dev) ou comptes démo,
+        // charger la première organisation active pour permettre l'audit et la démonstration
+        const { data: defaultOrgs } = await supabase
+          .from('organizations')
+          .select('*')
+          .eq('status', 'active')
+          .is('deleted_at', null)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (defaultOrgs && defaultOrgs.length > 0) {
+          const fallbackOrg = defaultOrgs[0] as Organization;
+          setCurrentOrg(fallbackOrg);
+          setOrganizations([
+            {
+              id: 'demo-membership',
+              organization_id: fallbackOrg.id,
+              user_id: userId,
+              role: profileData?.platform_role === 'super_admin' ? 'super_admin' : 'admin',
+              invited_by: null,
+              accepted_at: new Date().toISOString(),
+              deleted_at: null,
+              created_at: new Date().toISOString(),
+              organization: fallbackOrg,
+            },
+          ]);
+        } else {
+          setOrganizations([]);
+        }
       }
     } catch (err) {
       console.error('Error loading user data:', err);

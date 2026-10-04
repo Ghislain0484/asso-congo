@@ -12,6 +12,7 @@ import {
   ArrowDownRight,
   Shield,
   Target,
+  Building2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,7 +42,10 @@ export default function DashboardOverview() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!currentOrg) return;
+    if (!currentOrg) {
+      setLoading(false);
+      return;
+    }
     (async () => {
       setLoading(true);
       const orgId = currentOrg.id;
@@ -77,7 +81,18 @@ export default function DashboardOverview() {
     })();
   }, [currentOrg]);
 
-  if (!currentOrg) return null;
+  if (!currentOrg) {
+    return (
+      <div className="rounded-xl border border-dashed border-border p-12 text-center bg-card">
+        <Building2 className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+        <h3 className="text-lg font-semibold">Aucune organisation trouvée</h3>
+        <p className="text-sm text-muted-foreground mb-4">Créez votre première ONG pour accéder à toutes les fonctionnalités du tableau de bord.</p>
+        <Link href="/register">
+          <Button>Créer une ONG</Button>
+        </Link>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
