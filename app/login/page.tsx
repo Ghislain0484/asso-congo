@@ -69,6 +69,77 @@ export default function LoginPage() {
                 {loading ? 'Connexion...' : 'Se connecter'}
               </Button>
             </form>
+            <div className="mt-6 border-t border-border pt-4">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">
+                🚀 Comptes de Démonstration (1 clic)
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-auto flex-col items-start p-2 text-left hover:border-primary hover:bg-primary/5"
+                  onClick={() => {
+                    setEmail('dgifn.audit@finances.gouv.cg');
+                    setPassword('Demo2026!DGIFN');
+                  }}
+                >
+                  <span className="font-semibold text-xs text-primary flex items-center gap-1">
+                    🏛️ Régulateur
+                  </span>
+                  <span className="text-[10px] text-muted-foreground truncate w-full">DGIFN (Audit/Finance)</span>
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-auto flex-col items-start p-2 text-left hover:border-primary hover:bg-primary/5"
+                  onClick={() => {
+                    setEmail('dev.support@assocongo.cg');
+                    setPassword('Demo2026!DEV');
+                  }}
+                >
+                  <span className="font-semibold text-xs text-primary flex items-center gap-1">
+                    💻 Développeur
+                  </span>
+                  <span className="text-[10px] text-muted-foreground truncate w-full">Support Technique</span>
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-auto flex-col items-start p-2 text-left hover:border-primary hover:bg-primary/5"
+                  onClick={() => {
+                    setEmail('contact@espoircongo.cg');
+                    setPassword('Demo2026!ASSO');
+                  }}
+                >
+                  <span className="font-semibold text-xs text-primary flex items-center gap-1">
+                    🤝 Association
+                  </span>
+                  <span className="text-[10px] text-muted-foreground truncate w-full">Espoir Congo (Admin)</span>
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-auto flex-col items-start p-2 text-left hover:border-primary hover:bg-primary/5"
+                  onClick={() => {
+                    setEmail('adherent@espoircongo.cg');
+                    setPassword('Demo2026!MEMBER');
+                  }}
+                >
+                  <span className="font-semibold text-xs text-primary flex items-center gap-1">
+                    👥 Adhérent / Bénévole
+                  </span>
+                  <span className="text-[10px] text-muted-foreground truncate w-full">Grace Moukassa</span>
+                </Button>
+              </div>
+            </div>
+
             <p className="mt-4 text-center text-sm text-muted-foreground">
               Pas encore de compte ?{' '}
               <Link href="/register" className="font-medium text-primary hover:underline">
