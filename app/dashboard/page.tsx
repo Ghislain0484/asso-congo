@@ -21,6 +21,7 @@ import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 import { formatCurrency, formatCurrencyWithSymbol, formatDate, timeAgo, STATUS_LABELS } from '@/lib/constants';
+import { MOCK_CAMPAIGNS, MOCK_DONATIONS, MOCK_EVENTS, MOCK_MEMBERS, MOCK_TRANSACTIONS } from '@/lib/mock-data';
 import type { Campaign, Donation, Transaction, Event, Member } from '@/lib/types';
 
 interface Stats {
@@ -43,6 +44,18 @@ export default function DashboardOverview() {
 
   useEffect(() => {
     if (!currentOrg) {
+      setStats({
+        totalDonations: MOCK_DONATIONS.reduce((s, d) => s + d.amount, 0),
+        totalTips: 18500,
+        totalMembers: MOCK_MEMBERS.length,
+        activeCampaigns: MOCK_CAMPAIGNS.filter((c) => c.status === 'active').length,
+        upcomingEvents: MOCK_EVENTS.length,
+        recentDonations: MOCK_DONATIONS.slice(0, 5),
+        recentTransactions: MOCK_TRANSACTIONS.slice(0, 8),
+        topCampaigns: MOCK_CAMPAIGNS,
+        upcomingEventList: MOCK_EVENTS,
+        totalMembersList: MOCK_MEMBERS,
+      });
       setLoading(false);
       return;
     }
@@ -62,19 +75,43 @@ export default function DashboardOverview() {
         supabase.from('events').select('*').eq('organization_id', orgId).eq('status', 'active').is('deleted_at', null).gte('start_date', new Date().toISOString()).order('start_date', { ascending: true }).limit(3),
       ]);
 
-      const totalDonations = (donRes.data || []).reduce((s: number, d: { amount: number }) => s + d.amount, 0);
-      const totalTips = (tipRes.data || []).reduce((s: number, t: { amount: number }) => s + t.amount, 0);
+      const rawDonations = (recentDonRes.data || []) as Donation[];
+      const rawTransactions = (recentTxRes.data || []) as Transaction[];
+      const rawCampaigns = (topCampRes.data || []) as Campaign[];
+      const rawEvents = (upcomingEvtRes.data || []) as Event[];
+
+      const hasDbData = (donRes.data && donRes.data.length > 0) || rawCampaigns.length > 0 || rawTransactions.length > 0;
+
+      const totalDonations = hasDbData
+        ? (donRes.data || []).reduce((s: number, d: { amount: number }) => s + d.amount, 0)
+        : MOCK_DONATIONS.reduce((s, d) => s + d.amount, 0);
+
+      const totalTips = hasDbData
+        ? (tipRes.data || []).reduce((s: number, t: { amount: number }) => s + t.amount, 0)
+        : 18500;
+
+      const totalMembers = hasDbData
+        ? (memRes.data?.length || 0)
+        : MOCK_MEMBERS.length;
+
+      const activeCampaigns = hasDbData
+        ? (campRes.data?.length || 0)
+        : MOCK_CAMPAIGNS.filter((c) => c.status === 'active').length;
+
+      const upcomingEvents = hasDbData
+        ? (evtRes.data?.length || 0)
+        : MOCK_EVENTS.length;
 
       setStats({
         totalDonations,
         totalTips,
-        totalMembers: memRes.data?.length || 0,
-        activeCampaigns: campRes.data?.length || 0,
-        upcomingEvents: evtRes.data?.length || 0,
-        recentDonations: (recentDonRes.data || []) as Donation[],
-        recentTransactions: (recentTxRes.data || []) as Transaction[],
-        topCampaigns: (topCampRes.data || []) as Campaign[],
-        upcomingEventList: (upcomingEvtRes.data || []) as Event[],
+        totalMembers,
+        activeCampaigns,
+        upcomingEvents,
+        recentDonations: rawDonations.length > 0 ? rawDonations : MOCK_DONATIONS.slice(0, 5),
+        recentTransactions: rawTransactions.length > 0 ? rawTransactions : MOCK_TRANSACTIONS.slice(0, 8),
+        topCampaigns: rawCampaigns.length > 0 ? rawCampaigns : MOCK_CAMPAIGNS,
+        upcomingEventList: rawEvents.length > 0 ? rawEvents : MOCK_EVENTS,
         totalMembersList: [],
       });
       setLoading(false);

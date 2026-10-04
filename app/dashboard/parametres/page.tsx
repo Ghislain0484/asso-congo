@@ -11,16 +11,17 @@ import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase-client';
 import { PROVINCES_CONGO, DOMAINS_INTERVENTION } from '@/lib/constants';
+import { MOCK_ORGANIZATION } from '@/lib/mock-data';
 import type { Organization } from '@/lib/types';
 
 export default function SettingsPage() {
   const { currentOrg, refreshProfile } = useAuth();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<Partial<Organization>>({});
+  const [form, setForm] = useState<Partial<Organization>>(currentOrg || MOCK_ORGANIZATION);
 
   useEffect(() => {
-    if (currentOrg) setForm(currentOrg);
+    setForm(currentOrg || MOCK_ORGANIZATION);
   }, [currentOrg]);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -56,7 +57,7 @@ export default function SettingsPage() {
     setForm((prev) => ({ ...prev, domains: current.includes(d) ? current.filter((x) => x !== d) : [...current, d] }));
   };
 
-  if (!currentOrg) return null;
+  const activeOrg = currentOrg || MOCK_ORGANIZATION;
 
   return (
     <div className="space-y-6">
@@ -161,8 +162,8 @@ export default function SettingsPage() {
                 <p className="text-sm font-medium">Statut de verification</p>
                 <p className="text-xs text-muted-foreground">ONG verifiee par AssoCongo</p>
               </div>
-              <Badge variant={currentOrg.is_verified ? 'default' : 'secondary'}>
-                {currentOrg.is_verified ? 'Verifiee' : 'En attente'}
+              <Badge variant={activeOrg.is_verified ? 'default' : 'secondary'}>
+                {activeOrg.is_verified ? 'Verifiee' : 'En attente'}
               </Badge>
             </div>
             <div className="flex items-center justify-between rounded-lg border p-3">
@@ -170,7 +171,7 @@ export default function SettingsPage() {
                 <p className="text-sm font-medium">Score de transparence</p>
                 <p className="text-xs text-muted-foreground">Alignement DGIFN</p>
               </div>
-              <Badge variant="outline" className="text-primary">{currentOrg.transparency_score}/100</Badge>
+              <Badge variant="outline" className="text-primary">{activeOrg.transparency_score}/100</Badge>
             </div>
           </CardContent>
         </Card>
@@ -180,10 +181,10 @@ export default function SettingsPage() {
             <Globe className="h-5 w-5 text-primary" />
             <div>
               <p className="text-sm font-medium">Page publique</p>
-              <p className="text-xs text-muted-foreground">/o/{currentOrg.slug}</p>
+              <p className="text-xs text-muted-foreground">/o/{activeOrg.slug}</p>
             </div>
           </div>
-          <a href={`/o/${currentOrg.slug}`} target="_blank" rel="noopener noreferrer">
+          <a href={`/o/${activeOrg.slug}`} target="_blank" rel="noopener noreferrer">
             <Button variant="outline" size="sm">Voir la page</Button>
           </a>
         </div>

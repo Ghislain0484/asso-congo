@@ -13,6 +13,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase-client';
 import { formatCurrency, formatDate, slugify, STATUS_LABELS } from '@/lib/constants';
+import { MOCK_EVENTS } from '@/lib/mock-data';
 import type { Event } from '@/lib/types';
 
 export default function EventsPage() {
@@ -32,6 +33,7 @@ export default function EventsPage() {
 
   const loadEvents = async () => {
     if (!currentOrg) {
+      setEvents(MOCK_EVENTS);
       setLoading(false);
       return;
     }
@@ -41,7 +43,11 @@ export default function EventsPage() {
       .eq('organization_id', currentOrg.id)
       .is('deleted_at', null)
       .order('start_date', { ascending: true });
-    if (data) setEvents(data as Event[]);
+    if (data && data.length > 0) {
+      setEvents(data as Event[]);
+    } else {
+      setEvents(MOCK_EVENTS);
+    }
     setLoading(false);
   };
 

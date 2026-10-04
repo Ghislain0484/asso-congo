@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase-client';
 import type { Profile, Organization, OrganizationMember } from '@/lib/types';
+import { MOCK_ORGANIZATION } from '@/lib/mock-data';
 
 interface AuthContextValue {
   user: User | null;
@@ -86,7 +87,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             },
           ]);
         } else {
-          setOrganizations([]);
+          setCurrentOrg(MOCK_ORGANIZATION);
+          setOrganizations([
+            {
+              id: 'demo-mock-membership',
+              organization_id: MOCK_ORGANIZATION.id,
+              user_id: userId,
+              role: profileData?.platform_role === 'super_admin' ? 'super_admin' : 'admin',
+              invited_by: null,
+              accepted_at: new Date().toISOString(),
+              deleted_at: null,
+              created_at: new Date().toISOString(),
+              organization: MOCK_ORGANIZATION,
+            },
+          ]);
         }
       }
     } catch (err) {

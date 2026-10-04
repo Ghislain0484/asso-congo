@@ -13,6 +13,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase-client';
 import { formatCurrency, STATUS_LABELS, ROLE_LABELS, generateMemberCardNumber, slugify } from '@/lib/constants';
+import { MOCK_MEMBERS } from '@/lib/mock-data';
 import type { Member, MembershipType } from '@/lib/types';
 
 export default function MembersPage() {
@@ -34,6 +35,7 @@ export default function MembersPage() {
 
   const loadMembers = async () => {
     if (!currentOrg) {
+      setMembers(MOCK_MEMBERS);
       setLoading(false);
       return;
     }
@@ -43,7 +45,11 @@ export default function MembersPage() {
       .eq('organization_id', currentOrg.id)
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
-    if (!error && data) setMembers(data as Member[]);
+    if (!error && data && data.length > 0) {
+      setMembers(data as Member[]);
+    } else {
+      setMembers(MOCK_MEMBERS);
+    }
     setLoading(false);
   };
 

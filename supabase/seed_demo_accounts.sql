@@ -144,7 +144,7 @@ BEGIN
   -- 6. Création de campagnes de dons réalistes
   DELETE FROM campaigns WHERE organization_id = org_id;
   INSERT INTO campaigns (
-    id, organization_id, title, slug, description, target_amount, current_amount,
+    id, organization_id, title, slug, description, goal_amount, current_amount,
     currency, status, is_featured, end_date
   ) VALUES
   (
@@ -207,14 +207,14 @@ BEGIN
   -- 9. Transactions financières certifiées DGIFN (MTN MoMo & Airtel Money)
   DELETE FROM transactions WHERE organization_id = org_id;
   INSERT INTO transactions (
-    organization_id, campaign_id, type, amount, currency, status,
+    organization_id, type, amount, currency, status,
     provider, provider_reference, description
   ) VALUES
-    (org_id, camp1_id, 'donation', 50000, 'XAF', 'success', 'mtn_momo', 'MOMO-CG-2026-98124', 'Don pour l''école Bacongo via MTN MoMo (*105#)'),
-    (org_id, camp1_id, 'donation', 25000, 'XAF', 'success', 'airtel_money', 'AIRTEL-CG-2026-44312', 'Don solidaire via Airtel Money (*128#)'),
-    (org_id, camp1_id, 'donation', 100000, 'XAF', 'success', 'mtn_momo', 'MOMO-CG-2026-98441', 'Contribution entreprise mécène via MTN MoMo'),
-    (org_id, NULL, 'membership_fee', 15000, 'XAF', 'success', 'airtel_money', 'AIRTEL-CG-2026-77810', 'Cotisation annuelle adhérent 2026'),
-    (org_id, camp2_id, 'donation', 250000, 'XAF', 'success', 'cash', 'CASH-REC-BZV-01', 'Don en espèces déposé au siège avec reçu DGIFN');
+    (org_id, 'donation', 50000, 'XAF', 'success', 'mtn_momo', 'MOMO-CG-2026-98124', 'Don pour l''école Bacongo via MTN MoMo (*105#)'),
+    (org_id, 'donation', 25000, 'XAF', 'success', 'airtel_money', 'AIRTEL-CG-2026-44312', 'Don solidaire via Airtel Money (*128#)'),
+    (org_id, 'donation', 100000, 'XAF', 'success', 'mtn_momo', 'MOMO-CG-2026-98441', 'Contribution entreprise mécène via MTN MoMo'),
+    (org_id, 'membership_fee', 15000, 'XAF', 'success', 'airtel_money', 'AIRTEL-CG-2026-77810', 'Cotisation annuelle adhérent 2026'),
+    (org_id, 'donation', 250000, 'XAF', 'success', 'cash', 'CASH-REC-BZV-01', 'Don en espèces déposé au siège avec reçu DGIFN');
 
   -- 10. Dons enregistrés dans la table donations
   INSERT INTO donations (

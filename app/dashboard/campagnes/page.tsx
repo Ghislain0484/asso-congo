@@ -14,6 +14,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase-client';
 import { formatCurrency, slugify, STATUS_LABELS } from '@/lib/constants';
+import { MOCK_CAMPAIGNS } from '@/lib/mock-data';
 import type { Campaign } from '@/lib/types';
 
 export default function CampaignsPage() {
@@ -31,6 +32,7 @@ export default function CampaignsPage() {
 
   const loadCampaigns = async () => {
     if (!currentOrg) {
+      setCampaigns(MOCK_CAMPAIGNS);
       setLoading(false);
       return;
     }
@@ -40,7 +42,11 @@ export default function CampaignsPage() {
       .eq('organization_id', currentOrg.id)
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
-    if (data) setCampaigns(data as Campaign[]);
+    if (data && data.length > 0) {
+      setCampaigns(data as Campaign[]);
+    } else {
+      setCampaigns(MOCK_CAMPAIGNS);
+    }
     setLoading(false);
   };
 

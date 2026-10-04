@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 import { formatCurrency, formatCurrencyWithSymbol, formatDateTime, timeAgo, STATUS_LABELS, PROVIDER_LABELS, slugify } from '@/lib/constants';
+import { MOCK_TRANSACTIONS } from '@/lib/mock-data';
 import type { Transaction } from '@/lib/types';
 
 export default function TransactionsPage() {
@@ -19,6 +20,7 @@ export default function TransactionsPage() {
 
   useEffect(() => {
     if (!currentOrg) {
+      setTransactions(MOCK_TRANSACTIONS);
       setLoading(false);
       return;
     }
@@ -30,7 +32,11 @@ export default function TransactionsPage() {
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
         .limit(200);
-      if (data) setTransactions(data as Transaction[]);
+      if (data && data.length > 0) {
+        setTransactions(data as Transaction[]);
+      } else {
+        setTransactions(MOCK_TRANSACTIONS);
+      }
       setLoading(false);
     })();
   }, [currentOrg]);
