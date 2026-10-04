@@ -13,11 +13,13 @@ import {
   Shield,
   Target,
   Building2,
+  FileText,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { ReceiptModal } from '@/components/receipt-modal';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 import { formatCurrency, formatCurrencyWithSymbol, formatDate, timeAgo, STATUS_LABELS } from '@/lib/constants';
@@ -25,8 +27,9 @@ import { MOCK_CAMPAIGNS, MOCK_DONATIONS, MOCK_EVENTS, MOCK_MEMBERS, MOCK_TRANSAC
 import type { Campaign, Donation, Transaction, Event, Member } from '@/lib/types';
 
 interface Stats {
-  totalDonations: number;
-  totalTips: number;
+  totalCollected: number;
+  totalPayouts: number;
+  cashBalance: number;
   totalMembers: number;
   activeCampaigns: number;
   upcomingEvents: number;
@@ -38,15 +41,23 @@ interface Stats {
 }
 
 export default function DashboardOverview() {
-  const { currentOrg } = useAuth();
+  const { currentOrg, profile } = useAuth();
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
 
   useEffect(() => {
     if (!currentOrg) {
+      const allTx = MOCK_TRANSACTIONS;
+      const inTx = allTx.filter((t) => t.status === 'success' && t.type !== 'payout' && t.type !== 'refund');
+      const outTx = allTx.filter((t) => t.status === 'success' && (t.type === 'payout' || t.type === 'refund'));
+      const totalIn = inTx.reduce((s, t) => s + t.amount, 0);
+      const totalOut = outTx.reduce((s, t) => s + t.amount, 0);
+
       setStats({
-        totalDonations: MOCK_DONATIONS.reduce((s, d) => s + d.amount, 0),
-        totalTips: 18500,
+        totalCollected: totalIn,
+        totalPayouts: totalOut,
+        cashBalance: totalIn - totalOut,
         totalMembers: MOCK_MEMBERS.length,
         activeCampaigns: MOCK_CAMPAIGNS.filter((c) => c.status === 'active').length,
         upcomingEvents: MOCK_EVENTS.length,
@@ -63,9 +74,8 @@ export default function DashboardOverview() {
       setLoading(true);
       const orgId = currentOrg.id;
 
-      const [donRes, tipRes, memRes, campRes, evtRes, recentDonRes, recentTxRes, topCampRes, upcomingEvtRes] = await Promise.all([
+      const [donRes, memRes, campRes, evtRes, recentDonRes, recentTxRes, topCampRes, upcomingEvtRes] = await Promise.all([
         supabase.from('donations').select('amount').eq('organization_id', orgId).eq('status', 'completed').is('deleted_at', null),
-        supabase.from('tips').select('amount').eq('organization_id', orgId).eq('status', 'completed'),
         supabase.from('members').select('id').eq('organization_id', orgId).is('deleted_at', null),
         supabase.from('campaigns').select('id').eq('organization_id', orgId).eq('status', 'active').is('deleted_at', null),
         supabase.from('events').select('id').eq('organization_id', orgId).eq('status', 'active').is('deleted_at', null).gte('start_date', new Date().toISOString()),
@@ -82,29 +92,21 @@ export default function DashboardOverview() {
 
       const hasDbData = (donRes.data && donRes.data.length > 0) || rawCampaigns.length > 0 || rawTransactions.length > 0;
 
-      const totalDonations = hasDbData
-        ? (donRes.data || []).reduce((s: number, d: { amount: number }) => s + d.amount, 0)
-        : MOCK_DONATIONS.reduce((s, d) => s + d.amount, 0);
+      const txList = rawTransactions.length > 0 ? rawTransactions : MOCK_TRANSACTIONS;
+      const inTx = txList.filter((t) => t.status === 'success' && t.type !== 'payout' && t.type !== 'refund');
+      const outTx = txList.filter((t) => t.status === 'success' && (t.type === 'payout' || t.type === 'refund'));
+      const totalCollected = inTx.reduce((s, t) => s + t.amount, 0);
+      const totalPayouts = outTx.reduce((s, t) => s + t.amount, 0);
+      const cashBalance = totalCollected - totalPayouts;
 
-      const totalTips = hasDbData
-        ? (tipRes.data || []).reduce((s: number, t: { amount: number }) => s + t.amount, 0)
-        : 18500;
-
-      const totalMembers = hasDbData
-        ? (memRes.data?.length || 0)
-        : MOCK_MEMBERS.length;
-
-      const activeCampaigns = hasDbData
-        ? (campRes.data?.length || 0)
-        : MOCK_CAMPAIGNS.filter((c) => c.status === 'active').length;
-
-      const upcomingEvents = hasDbData
-        ? (evtRes.data?.length || 0)
-        : MOCK_EVENTS.length;
+      const totalMembers = hasDbData ? (memRes.data?.length || 0) : MOCK_MEMBERS.length;
+      const activeCampaigns = hasDbData ? (campRes.data?.length || 0) : MOCK_CAMPAIGNS.filter((c) => c.status === 'active').length;
+      const upcomingEvents = hasDbData ? (evtRes.data?.length || 0) : MOCK_EVENTS.length;
 
       setStats({
-        totalDonations,
-        totalTips,
+        totalCollected,
+        totalPayouts,
+        cashBalance,
         totalMembers,
         activeCampaigns,
         upcomingEvents,
@@ -140,14 +142,59 @@ export default function DashboardOverview() {
   }
 
   const statCards = [
-    { label: 'Total des dons', value: formatCurrencyWithSymbol(stats?.totalDonations || 0), icon: Heart, color: 'text-primary', bg: 'bg-primary/10', trend: '+12%' },
-    { label: 'Pourboires', value: formatCurrencyWithSymbol(stats?.totalTips || 0), icon: TrendingUp, color: 'text-secondary', bg: 'bg-secondary/10', trend: '+8%' },
-    { label: 'Membres', value: String(stats?.totalMembers || 0), icon: Users, color: 'text-info', bg: 'bg-info/10', trend: '+5' },
-    { label: 'Campagnes actives', value: String(stats?.activeCampaigns || 0), icon: Target, color: 'text-warning', bg: 'bg-warning/10', trend: '' },
+    { label: 'Collectes totales (Dons & Cotisations)', value: formatCurrencyWithSymbol(stats?.totalCollected || 0), icon: Heart, color: 'text-primary', bg: 'bg-primary/10', trend: '+18%' },
+    { label: 'Reversements bancaires (Payout)', value: formatCurrencyWithSymbol(stats?.totalPayouts || 0), icon: ArrowDownRight, color: 'text-info', bg: 'bg-info/10', trend: 'UBA Congo' },
+    { label: 'Trésorerie disponible (MoMo/Airtel)', value: formatCurrencyWithSymbol(stats?.cashBalance || 0), icon: TrendingUp, color: 'text-success', bg: 'bg-success/10', trend: 'En caisse' },
+    { label: 'Adhérents & Bénévoles', value: `${stats?.totalMembers || 0} membres`, icon: Users, color: 'text-warning', bg: 'bg-warning/10', trend: '100% à jour' },
   ];
 
   return (
     <div className="space-y-6">
+      {/* Bannière de Supervision DGIFN (Régulateur ou Support) */}
+      {profile?.platform_role === 'super_admin' && (
+        <Card className="border-emerald-700/40 bg-gradient-to-r from-emerald-950 via-slate-900 to-zinc-950 text-white shadow-xl overflow-hidden relative">
+          <div className="absolute top-0 left-0 right-0 h-1 flex">
+            <div className="w-1/3 bg-[#009543]"></div>
+            <div className="w-1/3 bg-[#FBDE4A]"></div>
+            <div className="w-1/3 bg-[#DC241F]"></div>
+          </div>
+          <CardContent className="p-5">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Shield className="h-5 w-5 text-emerald-400" />
+                  <span className="text-xs uppercase tracking-widest font-bold text-emerald-400">
+                    Direction Générale des Institutions Financières Nationales (DGIFN)
+                  </span>
+                  <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/40 text-[10px]">
+                    Supervision Fiscale Active
+                  </Badge>
+                </div>
+                <h3 className="text-lg font-black text-white">
+                  Contrôle & Traçabilité Financière • {currentOrg.name}
+                </h3>
+                <p className="text-xs text-zinc-300">
+                  N° Enregistrement : <strong className="text-white font-mono">{currentOrg.registration_number || 'REC-BZV-2024-N048'}</strong> • Agrément DGIFN : <strong className="text-emerald-300 font-mono">CONGO-ONG-2024-019</strong> • Conformité AML/CFT : <strong className="text-emerald-400">96/100 (Très Élevé)</strong>
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <Link href="/transparence" target="_blank">
+                  <Button size="sm" variant="outline" className="text-xs border-emerald-500/50 text-emerald-300 hover:bg-emerald-500/10">
+                    Registre National
+                  </Button>
+                </Link>
+                <Link href="/dashboard/transactions">
+                  <Button size="sm" className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white">
+                    Audit des Flux (MoMo & Banques)
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -269,11 +316,21 @@ export default function DashboardOverview() {
                       <p className="text-xs text-muted-foreground">{timeAgo(tx.created_at)}</p>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex flex-col items-end gap-1">
                     <p className={`text-sm font-bold ${tx.type === 'refund' || tx.type === 'payout' ? 'text-destructive' : 'text-primary'}`}>
                       {tx.type === 'refund' || tx.type === 'payout' ? '-' : '+'}{formatCurrency(tx.amount)} FCFA
                     </p>
-                    <Badge variant="outline" className="text-xs">{STATUS_LABELS[tx.status] || tx.status}</Badge>
+                    <div className="flex items-center gap-1.5">
+                      <Badge variant="outline" className="text-xs">{STATUS_LABELS[tx.status] || tx.status}</Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSelectedTx(tx)}
+                        className="h-6 text-[11px] text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50 px-1.5"
+                      >
+                        <FileText className="mr-1 h-3 w-3" /> Reçu
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -281,6 +338,14 @@ export default function DashboardOverview() {
           )}
         </CardContent>
       </Card>
+
+      {/* Modal Reçu Fiscal */}
+      <ReceiptModal
+        open={!!selectedTx}
+        onOpenChange={(open) => !open && setSelectedTx(null)}
+        transaction={selectedTx}
+        organization={currentOrg}
+      />
     </div>
   );
 }

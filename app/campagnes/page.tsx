@@ -10,6 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/lib/supabase-client';
 import { formatCurrency, APP_NAME } from '@/lib/constants';
+import { MOCK_CAMPAIGNS, MOCK_ORGANIZATION } from '@/lib/mock-data';
 import type { Campaign, Organization } from '@/lib/types';
 
 export default function CampaignsPublicPage() {
@@ -25,7 +26,12 @@ export default function CampaignsPublicPage() {
         .eq('status', 'active')
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
-      if (data) setCampaigns(data as (Campaign & { organization: Organization })[]);
+      if (data && data.length > 0) {
+        setCampaigns(data as (Campaign & { organization: Organization })[]);
+      } else {
+        const fallback = MOCK_CAMPAIGNS.map((c) => ({ ...c, organization: MOCK_ORGANIZATION }));
+        setCampaigns(fallback);
+      }
       setLoading(false);
     })();
   }, []);

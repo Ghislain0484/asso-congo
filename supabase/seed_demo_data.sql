@@ -199,9 +199,9 @@ BEGIN
     org_aec,
     'Rénovation et équipement de l''école primaire de Bacongo',
     'renovation-ecole-bacongo',
-    'Réhabilitation de 4 salles de classe dégradées, achat de 120 tables-bancs et installation de latrines écologiques pour 280 écoliers de Bacongo.',
+    'Réhabilitation de 4 salles de classe dégradées, achat de 120 tables-bancs en bois local et installation de latrines écologiques pour 280 écoliers de Bacongo.',
     3000000,
-    2450000,
+    2150000,
     'XAF',
     'Éducation',
     'active',
@@ -375,36 +375,36 @@ BEGIN
     'CG-2026-00201', 'Trésorier SOPN'
   );
 
-  -- 8. Insérer les Dons vérifiés
+  -- 8. Insérer les Dons vérifiés (Total Projet Bacongo: 2 150 000 FCFA)
   INSERT INTO donations (
     id, organization_id, campaign_id, donor_name, donor_email, donor_phone,
     donor_is_anonymous, amount, tip_amount, currency, message, status,
     payment_provider, receipt_number, receipt_sent
   ) VALUES
   (
-    don_1, org_aec, cmp_bacongo, 'Sylvain Batéké (Société BTP)', 'sylvain.bateke@btp-congo.cg', '+242 06 611 00 22',
-    false, 100000, 2500, 'XAF', 'Bravo pour la réhabilitation des écoles de la République !', 'completed',
-    'mtn_momo', 'REC-2026-00981', true
+    don_1, org_aec, cmp_bacongo, 'Sylvain Batéké (Société BTP Congo)', 'sylvain.bateke@btp-congo.cg', '+242 06 611 00 22',
+    false, 1000000, 15000, 'XAF', 'Notre entreprise soutient fièrement la réfection des salles de classe de Bacongo !', 'completed',
+    'mtn_momo', 'REC-DGIFN-2026-004812', true
   ),
   (
-    don_2, org_aec, cmp_filles, 'Anonyme Solidaire', NULL, '+242 04 422 33 44',
-    true, 50000, 1000, 'XAF', 'Pour l''autonomisation et l''avenir de nos soeurs.', 'completed',
-    'airtel_money', 'REC-2026-00982', false
+    don_2, org_aec, cmp_bacongo, 'Dr. Christian Mabiala', 'mabiala.doc@cg-sante.org', '+242 06 612 00 99',
+    false, 500000, 5000, 'XAF', 'Contribution pour le bloc sanitaire et les latrines écologiques.', 'completed',
+    'cash', 'REC-DGIFN-2026-004813', true
   ),
   (
-    don_3, org_aec, cmp_bacongo, 'Patrick Mouyabi', 'patrick.mouyabi@gmail.com', '+242 06 644 55 66',
-    false, 25000, 500, 'XAF', 'Mes encouragements pour Bacongo.', 'completed',
-    'mtn_momo', 'REC-2026-00983', true
+    don_3, org_aec, cmp_bacongo, 'M. & Mme Koumou (Diaspora France)', 'koumou.famille@orange.fr', '+33 6 12 34 56 78',
+    false, 300000, 5000, 'XAF', 'Soutien de la diaspora congolaise de France pour la toiture en tôles bac.', 'completed',
+    'airtel_money', 'REC-DGIFN-2026-004814', true
   ),
   (
-    don_4, org_aec, cmp_filles, 'Nathalie Loubaki', 'n.loubaki@yahoo.fr', '+242 05 511 22 33',
-    false, 15000, 500, 'XAF', 'Vive la jeunesse numérique congolaise.', 'completed',
-    'mtn_momo', 'REC-2026-00984', true
+    don_4, org_aec, cmp_bacongo, 'Patrick Mouyabi', 'patrick.mouyabi@gmail.com', '+242 06 644 55 66',
+    false, 250000, 2500, 'XAF', 'Fidèle donateur pour l''éducation de nos enfants.', 'completed',
+    'mtn_momo', 'REC-DGIFN-2026-004815', true
   ),
   (
-    don_5, org_aec, cmp_bacongo, 'Dr. Christian Mabiala', 'mabiala.doc@cg-sante.org', '+242 06 612 00 99',
-    false, 250000, 5000, 'XAF', 'Don institutionnel pour les latrines scolaires.', 'completed',
-    'cash', 'REC-2026-00985', true
+    don_5, org_aec, cmp_bacongo, 'Donateur Anonyme Poto-Poto', NULL, '+242 06 644 55 66',
+    true, 100000, 1000, 'XAF', 'Pour l''achat des tables-bancs en bois d''Iroko.', 'completed',
+    'mtn_momo', 'REC-DGIFN-2026-004816', true
   )
   ON CONFLICT (id) DO UPDATE SET
     organization_id = EXCLUDED.organization_id,
@@ -413,51 +413,56 @@ BEGIN
     status = EXCLUDED.status,
     payment_provider = EXCLUDED.payment_provider;
 
-  -- 9. Insérer les Transactions réelles (avec traçabilité financière)
+  -- 9. Insérer les Transactions réelles (avec traçabilité financière & reversement bancaire)
   INSERT INTO transactions (
     organization_id, donation_id, event_registration_id, type, amount, currency,
     status, provider, provider_reference, provider_transaction_id, provider_phone,
     description, processed_at
   ) VALUES
   (
-    org_aec, don_1, NULL, 'donation', 100000, 'XAF',
+    org_aec, NULL, NULL, 'payout', 1800000, 'XAF',
+    'success', 'other', 'VIR-UBA-BZV-2026-00412', 'BANK-UBA-CG-00412', '+242 06 600 00 03',
+    'Reversement bancaire certifié DGIFN vers compte UBA Congo AEC (N° CG023 00101 02000014820 45) - Règlement 120 tables-bancs', now() - interval '2 days'
+  ),
+  (
+    org_aec, don_1, NULL, 'donation', 1000000, 'XAF',
     'success', 'mtn_momo', 'MOMO-CG-2026-98441', 'TXN-MTN-98441', '+242 06 611 00 22',
-    'Don mécène pour l''école primaire Bacongo via MTN MoMo (*105#)', now() - interval '1 hour'
+    'Don mécène pour réfection école primaire Bacongo via MTN MoMo (*105#)', now() - interval '15 days'
   ),
   (
-    org_aec, don_2, NULL, 'donation', 50000, 'XAF',
-    'success', 'airtel_money', 'AIRTEL-CG-2026-88210', 'TXN-ART-88210', '+242 04 422 33 44',
-    'Don solidaire pour bourses numériques via Airtel Money (*128#)', now() - interval '4 hours'
+    org_aec, don_2, NULL, 'donation', 500000, 'XAF',
+    'success', 'cash', 'REC-CASH-BZV-0019', 'TXN-CSH-0019', '+242 06 612 00 99',
+    'Don Dr. Mabiala pour réfection latrines avec reçu certifié DGIFN', now() - interval '10 days'
   ),
   (
-    org_aec, don_3, NULL, 'donation', 25000, 'XAF',
+    org_aec, don_3, NULL, 'donation', 300000, 'XAF',
+    'success', 'airtel_money', 'AIRTEL-CG-2026-88210', 'TXN-ART-88210', '+33 6 12 34 56 78',
+    'Don diaspora Koumou pour toiture Bacongo via Airtel Money (*128#)', now() - interval '6 days'
+  ),
+  (
+    org_aec, don_4, NULL, 'donation', 250000, 'XAF',
+    'success', 'mtn_momo', 'MOMO-CG-2026-97652', 'TXN-MTN-97652', '+242 06 644 55 66',
+    'Don Patrick Mouyabi pour école Bacongo via MTN MoMo', now() - interval '4 days'
+  ),
+  (
+    org_aec, don_5, NULL, 'donation', 100000, 'XAF',
     'success', 'mtn_momo', 'MOMO-CG-2026-98124', 'TXN-MTN-98124', '+242 06 644 55 66',
-    'Don particulier école Bacongo via MTN MoMo', now() - interval '1 day'
+    'Don anonyme Poto-Poto pour école Bacongo via MTN MoMo', now() - interval '1 day'
   ),
   (
     org_aec, NULL, NULL, 'membership_fee', 25000, 'XAF',
     'success', 'airtel_money', 'AIRTEL-CG-2026-77810', 'TXN-ART-77810', '+242 04 423 45 67',
-    'Cotisation annuelle Bureau AEC 2026 (Carine Massamba)', now() - interval '2 days'
-  ),
-  (
-    org_aec, don_4, NULL, 'donation', 15000, 'XAF',
-    'success', 'mtn_momo', 'MOMO-CG-2026-97652', 'TXN-MTN-97652', '+242 05 511 22 33',
-    'Don solidaire jeune diplômé via MTN MoMo', now() - interval '3 days'
-  ),
-  (
-    org_aec, don_5, NULL, 'donation', 250000, 'XAF',
-    'success', 'cash', 'REC-CASH-BZV-0019', 'TXN-CSH-0019', '+242 06 612 00 99',
-    'Don mécène en espèces avec reçu certifié DGIFN', now() - interval '5 days'
+    'Cotisation annuelle 2026 - Secrétaire Générale (Carine Massamba)', now() - interval '25 days'
   ),
   (
     org_aec, NULL, NULL, 'membership_fee', 15000, 'XAF',
     'success', 'mtn_momo', 'MOMO-CG-2026-96101', 'TXN-MTN-96101', '+242 06 612 34 56',
-    'Adhésion annuelle membre 2026 (Arsène Loundou)', now() - interval '6 days'
+    'Adhésion annuelle membre actif 2026 (Arsène Loundou)', now() - interval '20 days'
   ),
   (
-    org_aec, NULL, NULL, 'tip', 2500, 'XAF',
+    org_aec, NULL, NULL, 'tip', 15000, 'XAF',
     'success', 'mtn_momo', 'MOMO-CG-2026-TIP01', 'TXN-TIP-01', '+242 06 611 00 22',
-    'Pourboire de fonctionnement AssoCongo', now() - interval '1 hour'
+    'Pourboire de fonctionnement AssoCongo', now() - interval '15 days'
   ),
   (
     org_sopn, NULL, NULL, 'donation', 75000, 'XAF',

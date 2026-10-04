@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { Users, Plus, Search, Download, Upload, Trash2, MoreVertical, Mail, Phone } from 'lucide-react';
+import { Users, Plus, Search, Download, Upload, Trash2, MoreVertical, Mail, Phone, CreditCard, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { MembershipCardModal } from '@/components/membership-card-modal';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase-client';
@@ -23,6 +24,7 @@ export default function MembersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
@@ -271,14 +273,35 @@ export default function MembersPage() {
                 <div className="mt-3 space-y-1 text-sm text-muted-foreground">
                   {m.email && <p className="flex items-center gap-2"><Mail className="h-3 w-3" /> {m.email}</p>}
                   {m.phone && <p className="flex items-center gap-2"><Phone className="h-3 w-3" /> {m.phone}</p>}
-                  {m.card_number && <p className="flex items-center gap-2 text-xs"><Badge variant="secondary" className="text-xs">Carte: {m.card_number}</Badge></p>}
-                  {m.membership_fee > 0 && <p className="text-xs">Cotisation: {formatCurrency(m.membership_fee)} FCFA</p>}
+                  <div className="flex items-center justify-between text-xs pt-1">
+                    <span className="font-mono text-zinc-600 bg-muted px-1.5 py-0.5 rounded">N° {m.card_number}</span>
+                    <span className="font-medium text-emerald-700 flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3 inline text-emerald-600" /> Cotisation à jour
+                    </span>
+                  </div>
+                  {m.membership_fee > 0 && <p className="text-xs text-muted-foreground">Annuelle : {formatCurrency(m.membership_fee)} FCFA</p>}
                 </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedMember(m)}
+                  className="w-full mt-3 text-xs text-emerald-800 border-emerald-600/30 hover:bg-emerald-50 hover:text-emerald-900"
+                >
+                  <CreditCard className="mr-1.5 h-3.5 w-3.5 text-emerald-600" /> Voir Carte Officielle 2026
+                </Button>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+
+      {/* Modal Carte de Membre */}
+      <MembershipCardModal
+        open={!!selectedMember}
+        onOpenChange={(open) => !open && setSelectedMember(null)}
+        member={selectedMember}
+        organization={currentOrg}
+      />
     </div>
   );
 }

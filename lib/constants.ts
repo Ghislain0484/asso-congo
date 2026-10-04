@@ -146,7 +146,60 @@ export const PROVIDER_LABELS: Record<string, string> = {
   mtn_momo: 'MTN Mobile Money',
   airtel_money: 'Airtel Money',
   monetbil: 'Monetbil',
-  cash: 'Espèces',
+  cash: 'Espèces (Reçu physique)',
   orange_money: 'Orange Money (Inactif)',
   other: 'Autre',
 };
+
+export function numberToFrenchWords(n: number): string {
+  if (n === 0) return 'zéro';
+  const units = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'];
+  const teens = ['dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
+  const tens = ['', 'dix', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix', 'quatre-vingts', 'quatre-vingt-dix'];
+
+  function convertBelow1000(num: number): string {
+    let res = '';
+    const hundred = Math.floor(num / 100);
+    const rest = num % 100;
+
+    if (hundred > 0) {
+      if (hundred === 1) res += 'cent';
+      else res += units[hundred] + ' cent';
+      if (rest === 0 && hundred > 1) res += 's';
+      if (rest > 0) res += ' ';
+    }
+
+    if (rest > 0) {
+      if (rest < 10) res += units[rest];
+      else if (rest < 20) res += teens[rest - 10];
+      else {
+        const ten = Math.floor(rest / 10);
+        const unit = rest % 10;
+        if (ten === 7) res += 'soixante-' + teens[unit];
+        else if (ten === 9) res += 'quatre-vingt-' + teens[unit];
+        else {
+          res += tens[ten];
+          if (unit === 1 && ten < 8) res += ' et un';
+          else if (unit > 0) res += '-' + units[unit];
+        }
+      }
+    }
+    return res.trim();
+  }
+
+  if (n >= 1000000) {
+    const millions = Math.floor(n / 1000000);
+    const restMillions = n % 1000000;
+    const millStr = millions === 1 ? 'un million' : convertBelow1000(millions) + ' millions';
+    return restMillions > 0 ? `${millStr} ${numberToFrenchWords(restMillions)}` : millStr;
+  }
+
+  if (n >= 1000) {
+    const thousands = Math.floor(n / 1000);
+    const restThousands = n % 1000;
+    const thouStr = thousands === 1 ? 'mille' : convertBelow1000(thousands) + ' mille';
+    return restThousands > 0 ? `${thouStr} ${convertBelow1000(restThousands)}` : thouStr;
+  }
+
+  return convertBelow1000(n);
+}

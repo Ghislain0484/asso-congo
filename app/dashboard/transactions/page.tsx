@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { Receipt, Download, TrendingUp, TrendingDown, Filter, Shield } from 'lucide-react';
+import { Receipt, Download, TrendingUp, TrendingDown, Filter, Shield, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ReceiptModal } from '@/components/receipt-modal';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 import { formatCurrency, formatCurrencyWithSymbol, formatDateTime, timeAgo, STATUS_LABELS, PROVIDER_LABELS, slugify } from '@/lib/constants';
@@ -17,6 +18,7 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
 
   useEffect(() => {
     if (!currentOrg) {
@@ -166,6 +168,7 @@ export default function TransactionsPage() {
                     <th className="p-3 font-medium">Provider</th>
                     <th className="p-3 font-medium">Reference</th>
                     <th className="p-3 font-medium">Statut</th>
+                    <th className="p-3 font-medium text-right">Justificatif</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -181,7 +184,7 @@ export default function TransactionsPage() {
                         </span>
                       </td>
                       <td className="p-3 text-xs">{t.provider ? PROVIDER_LABELS[t.provider] || t.provider : '-'}</td>
-                      <td className="p-3 text-xs text-muted-foreground">{t.provider_reference || '-'}</td>
+                      <td className="p-3 text-xs text-muted-foreground font-mono">{t.provider_reference || '-'}</td>
                       <td className="p-3">
                         <Badge
                           variant="outline"
@@ -194,6 +197,16 @@ export default function TransactionsPage() {
                           {STATUS_LABELS[t.status] || t.status}
                         </Badge>
                       </td>
+                      <td className="p-3 text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedTx(t)}
+                          className="h-8 text-xs text-primary hover:text-primary hover:bg-primary/10"
+                        >
+                          <FileText className="mr-1.5 h-3.5 w-3.5" /> Reçu Fiscal
+                        </Button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -202,6 +215,14 @@ export default function TransactionsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Reçu Fiscal Modal */}
+      <ReceiptModal
+        open={!!selectedTx}
+        onOpenChange={(open) => !open && setSelectedTx(null)}
+        transaction={selectedTx}
+        organization={currentOrg}
+      />
     </div>
   );
 }

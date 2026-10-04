@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase-client';
 import { formatCurrency, formatDate, APP_NAME } from '@/lib/constants';
+import { MOCK_EVENTS, MOCK_ORGANIZATION } from '@/lib/mock-data';
 import type { Event, Organization } from '@/lib/types';
 
 export default function EventsPublicPage() {
@@ -24,7 +25,12 @@ export default function EventsPublicPage() {
         .is('deleted_at', null)
         .gte('start_date', new Date().toISOString())
         .order('start_date', { ascending: true });
-      if (data) setEvents(data as (Event & { organization: Organization })[]);
+      if (data && data.length > 0) {
+        setEvents(data as (Event & { organization: Organization })[]);
+      } else {
+        const fallback = MOCK_EVENTS.map((e) => ({ ...e, organization: MOCK_ORGANIZATION }));
+        setEvents(fallback);
+      }
       setLoading(false);
     })();
   }, []);

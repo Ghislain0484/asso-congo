@@ -12,6 +12,12 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase-client';
 import { formatCurrency, formatDate, formatDateTime, STATUS_LABELS } from '@/lib/constants';
+import {
+  MOCK_ORGANIZATION,
+  MOCK_ORGANIZATIONS,
+  MOCK_EVENTS,
+  MOCK_EVENT_REGISTRATIONS,
+} from '@/lib/mock-data';
 import type { Event, Organization, EventRegistration } from '@/lib/types';
 
 export default function PublicEventDetailPage() {
@@ -30,25 +36,48 @@ export default function PublicEventDetailPage() {
   useEffect(() => {
     if (!slug || !eventslug) return;
     (async () => {
-      const { data: orgData } = await supabase.from('organizations').select('*').eq('slug', slug).maybeSingle();
-      if (!orgData) { setLoading(false); return; }
-      setOrg(orgData as Organization);
-      const { data: evtData } = await supabase
-        .from('events')
-        .select('*')
-        .eq('organization_id', orgData.id)
-        .eq('slug', eventslug)
-        .maybeSingle();
-      if (evtData) {
-        setEvent(evtData as Event);
-        const { data: regs } = await supabase
-          .from('event_registrations')
-          .select('*')
-          .eq('event_id', evtData.id)
-          .is('deleted_at', null)
-          .order('created_at', { ascending: false });
-        if (regs) setRegistrations(regs as EventRegistration[]);
+      let resolvedOrg: Organization | null = null;
+      let resolvedEvt: Event | null = null;
+      let resolvedRegs: EventRegistration[] = [];
+
+      try {
+        const { data: orgData } = await supabase.from('organizations').select('*').eq('slug', slug).maybeSingle();
+        if (orgData) {
+          resolvedOrg = orgData as Organization;
+          const { data: evtData } = await supabase
+            .from('events')
+            .select('*')
+            .eq('organization_id', orgData.id)
+            .eq('slug', eventslug)
+            .maybeSingle();
+          if (evtData) {
+            resolvedEvt = evtData as Event;
+            const { data: regs } = await supabase
+              .from('event_registrations')
+              .select('*')
+              .eq('event_id', evtData.id)
+              .is('deleted_at', null)
+              .order('created_at', { ascending: false });
+            if (regs) resolvedRegs = regs as EventRegistration[];
+          }
+        }
+      } catch (err) {
+        console.warn('Supabase query error, fallback to mock:', err);
       }
+
+      if (!resolvedOrg) {
+        resolvedOrg = MOCK_ORGANIZATIONS.find((o) => o.slug === slug) || (slug === 'espoir-congo' ? MOCK_ORGANIZATION : null);
+      }
+      if (!resolvedEvt) {
+        resolvedEvt = MOCK_EVENTS.find((e) => e.slug === eventslug) || null;
+      }
+      if (resolvedRegs.length === 0 && resolvedEvt) {
+        resolvedRegs = MOCK_EVENT_REGISTRATIONS.filter((r) => r.event_id === resolvedEvt!.id);
+      }
+
+      if (resolvedOrg) setOrg(resolvedOrg);
+      if (resolvedEvt) setEvent(resolvedEvt);
+      setRegistrations(resolvedRegs);
       setLoading(false);
     })();
   }, [slug, eventslug]);

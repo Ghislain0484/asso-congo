@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/lib/supabase-client';
+import { MOCK_ORGANIZATIONS } from '@/lib/mock-data';
 import type { Organization } from '@/lib/types';
 import { APP_NAME } from '@/lib/constants';
 
@@ -24,7 +25,11 @@ export default function AssociationsPage() {
         .eq('status', 'active')
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
-      if (data) setOrgs(data as Organization[]);
+      if (data && data.length > 0) {
+        setOrgs(data as Organization[]);
+      } else {
+        setOrgs(MOCK_ORGANIZATIONS);
+      }
       setLoading(false);
     })();
   }, []);
