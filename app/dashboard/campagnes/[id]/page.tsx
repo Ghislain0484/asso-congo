@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { ReceiptModal } from '@/components/receipt-modal';
+import { CerReportModal } from '@/components/cer-report-modal';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 import { formatCurrency, formatCurrencyWithSymbol, formatDate, timeAgo, STATUS_LABELS, PROVIDER_LABELS } from '@/lib/constants';
@@ -22,6 +23,7 @@ export default function CampaignDetailPage() {
   const [donations, setDonations] = useState<Donation[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+  const [showCerModal, setShowCerModal] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -65,9 +67,19 @@ export default function CampaignDetailPage() {
 
   return (
     <div className="space-y-6">
-      <Link href="/dashboard/campagnes">
-        <Button variant="ghost" size="sm"><ArrowLeft className="mr-2 h-4 w-4" /> Retour aux campagnes</Button>
-      </Link>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <Link href="/dashboard/campagnes">
+          <Button variant="ghost" size="sm"><ArrowLeft className="mr-2 h-4 w-4" /> Retour aux campagnes</Button>
+        </Link>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowCerModal(true)}
+          className="gap-1.5 border-emerald-600/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 text-xs font-semibold"
+        >
+          <FileText className="h-4 w-4" /> Compte d'Emploi des Ressources (CER 2026)
+        </Button>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
@@ -266,6 +278,13 @@ export default function CampaignDetailPage() {
         open={!!selectedTx}
         onOpenChange={(open) => !open && setSelectedTx(null)}
         transaction={selectedTx}
+        organization={currentOrg}
+      />
+
+      {/* Modal Compte d'Emploi des Ressources (CER 2026) */}
+      <CerReportModal
+        open={showCerModal}
+        onOpenChange={setShowCerModal}
         organization={currentOrg}
       />
     </div>

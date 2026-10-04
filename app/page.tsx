@@ -71,8 +71,11 @@ export default function HomePage() {
             <Link href="/transparence" className="text-sm font-medium text-muted-foreground hover:text-primary">
               Transparence
             </Link>
+            <Link href="/verifier-recu" className="text-sm font-medium text-emerald-700 dark:text-emerald-400 font-semibold hover:underline flex items-center gap-1">
+              <Shield className="h-3.5 w-3.5" /> Vérifier un Reçu
+            </Link>
             <Link href="/a-propos" className="text-sm font-medium text-muted-foreground hover:text-primary">
-              A propos
+              À propos
             </Link>
           </nav>
           <div className="flex items-center gap-3">
@@ -80,19 +83,26 @@ export default function HomePage() {
               <Button variant="ghost" size="sm">Connexion</Button>
             </Link>
             <Link href="/register">
-              <Button size="sm">Creer une ONG</Button>
+              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">Créer une ONG</Button>
             </Link>
           </div>
         </div>
       </header>
+
+      {/* Ruban Républicain Vert-Jaune-Rouge */}
+      <div className="h-1.5 w-full flex">
+        <div className="w-1/3 bg-[#009543]"></div>
+        <div className="w-1/3 bg-[#FBDE4A]"></div>
+        <div className="w-1/3 bg-[#DC241F]"></div>
+      </div>
 
       {/* Hero */}
       <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-secondary/5">
         <div className="container mx-auto px-4 py-20 md:py-28">
           <div className="grid gap-12 md:grid-cols-2 md:items-center">
             <div className="animate-slide-up">
-              <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/20">
-                <Shield className="mr-1 h-3 w-3" /> Aligne avec les missions DGIFN
+              <Badge className="mb-4 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300">
+                <Shield className="mr-1 h-3.5 w-3.5" /> Tutelle Loi 1901 • Surveillance Fiscale DGIFN • République du Congo
               </Badge>
               <h1 className="mb-6 text-4xl font-bold leading-tight text-balance md:text-5xl lg:text-6xl">
                 La plateforme <span className="text-primary">100% gratuite</span> de gestion des ONG au Congo
