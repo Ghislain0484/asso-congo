@@ -9,8 +9,30 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- ------------------------------------------------------------------------------
--- ÉTAPE 1 : FONCTIONS DE CONTRÔLE SÉCURISÉES (Bypass RLS pour éliminer le 500)
+-- ÉTAPE 0 : CORRECTION DES DÉCLENCHEURS (Supprime l'erreur record new has no field updated_at)
 -- ------------------------------------------------------------------------------
+
+-- 1. Sécuriser la fonction pour qu'elle n'échoue jamais si une table n'a pas updated_at
+CREATE OR REPLACE FUNCTION update_updated_at() RETURNS TRIGGER AS $$
+BEGIN
+  BEGIN
+    NEW.updated_at = now();
+  EXCEPTION WHEN undefined_column THEN
+    -- Colonne absente, ignorer silencieusement
+  END;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 2. Supprimer les triggers sur les tables qui ne possèdent pas de colonne updated_at
+DROP TRIGGER IF EXISTS set_updated_at ON organization_members;
+DROP TRIGGER IF EXISTS set_updated_at ON transactions;
+DROP TRIGGER IF EXISTS set_updated_at ON tips;
+DROP TRIGGER IF EXISTS set_updated_at ON audit_logs;
+
+-- 3. Ajouter la colonne updated_at si nécessaire
+ALTER TABLE organization_members ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now();
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now();
 
 CREATE OR REPLACE FUNCTION public.is_member_of_org(p_org_id uuid)
 RETURNS boolean
