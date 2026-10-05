@@ -28,6 +28,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { ReceiptModal } from '@/components/receipt-modal';
 import { CerReportModal } from '@/components/cer-report-modal';
+import { MemberPersonalSpace } from '@/components/member-personal-space';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 import { formatCurrency, formatCurrencyWithSymbol, formatDate, timeAgo, STATUS_LABELS } from '@/lib/constants';
@@ -73,40 +74,27 @@ interface Stats {
 }
 
 export default function DashboardOverview() {
-  const { currentOrg, profile } = useAuth();
+  const { currentOrg, profile, demoPersona, setDemoPersona } = useAuth();
+  const effectiveOrg = currentOrg || MOCK_ORGANIZATION;
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const [showCerModal, setShowCerModal] = useState(false);
   const [viewMode, setViewMode] = useState<'association' | 'regulator'>('association');
 
+  // Synchronisation avec le sélecteur démo global
   useEffect(() => {
-    if (!currentOrg) {
-      const allTx = MOCK_TRANSACTIONS;
-      const inTx = allTx.filter((t) => t.status === 'success' && t.type !== 'payout' && t.type !== 'refund');
-      const outTx = allTx.filter((t) => t.status === 'success' && (t.type === 'payout' || t.type === 'refund'));
-      const totalIn = inTx.reduce((s, t) => s + t.amount, 0);
-      const totalOut = outTx.reduce((s, t) => s + t.amount, 0);
-
-      setStats({
-        totalCollected: totalIn,
-        totalPayouts: totalOut,
-        cashBalance: totalIn - totalOut,
-        totalMembers: MOCK_MEMBERS.length,
-        activeCampaigns: MOCK_CAMPAIGNS.filter((c) => c.status === 'active').length,
-        upcomingEvents: MOCK_EVENTS.length,
-        recentDonations: MOCK_DONATIONS.slice(0, 5),
-        recentTransactions: MOCK_TRANSACTIONS.slice(0, 8),
-        topCampaigns: MOCK_CAMPAIGNS,
-        upcomingEventList: MOCK_EVENTS,
-        totalMembersList: MOCK_MEMBERS,
-      });
-      setLoading(false);
-      return;
+    if (demoPersona === 'regulator') {
+      setViewMode('regulator');
+    } else if (demoPersona === 'association') {
+      setViewMode('association');
     }
+  }, [demoPersona]);
+
+  useEffect(() => {
     (async () => {
       setLoading(true);
-      const orgId = currentOrg.id;
+      const orgId = effectiveOrg.id;
 
       const [donRes, memRes, campRes, evtRes, recentDonRes, recentTxRes, topCampRes, upcomingEvtRes] = await Promise.all([
         supabase.from('donations').select('amount').eq('organization_id', orgId).eq('status', 'completed').is('deleted_at', null),
@@ -148,22 +136,16 @@ export default function DashboardOverview() {
         recentTransactions: rawTransactions.length > 0 ? rawTransactions : MOCK_TRANSACTIONS.slice(0, 8),
         topCampaigns: rawCampaigns.length > 0 ? rawCampaigns : MOCK_CAMPAIGNS,
         upcomingEventList: rawEvents.length > 0 ? rawEvents : MOCK_EVENTS,
-        totalMembersList: [],
+        totalMembersList: MOCK_MEMBERS,
       });
       setLoading(false);
     })();
   }, [currentOrg]);
 
-  if (!currentOrg) {
+  // Si l'utilisateur ou la démo est en mode Adhérent (Grace Moukassa - HelloAsso)
+  if (demoPersona === 'adherent') {
     return (
-      <div className="rounded-xl border border-dashed border-border p-12 text-center bg-card">
-        <Building2 className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-        <h3 className="text-lg font-semibold">Aucune organisation trouvée</h3>
-        <p className="text-sm text-muted-foreground mb-4">Créez votre première ONG pour accéder à toutes les fonctionnalités du tableau de bord.</p>
-        <Link href="/register">
-          <Button>Créer une ONG</Button>
-        </Link>
-      </div>
+      <MemberPersonalSpace onSwitchToAssociation={() => setDemoPersona('association')} />
     );
   }
 
@@ -185,7 +167,7 @@ export default function DashboardOverview() {
   return (
     <div className="space-y-6">
       {/* Bannière de Supervision DGIFN (Régulateur ou Support) */}
-      {profile?.platform_role === 'super_admin' && (
+      {(profile?.platform_role === 'super_admin' || demoPersona === 'regulator' || viewMode === 'regulator') && (
         <Card className="border-emerald-700/40 bg-gradient-to-r from-emerald-950 via-slate-900 to-zinc-950 text-white shadow-xl overflow-hidden relative">
           <div className="absolute top-0 left-0 right-0 h-1 flex">
             <div className="w-1/3 bg-[#009543]"></div>
@@ -205,10 +187,10 @@ export default function DashboardOverview() {
                   </Badge>
                 </div>
                 <h3 className="text-lg font-black text-white">
-                  Contrôle & Traçabilité Financière • {viewMode === 'regulator' ? 'Tour de Contrôle Nationale (12 Départements)' : currentOrg.name}
+                  Contrôle & Traçabilité Financière • {viewMode === 'regulator' ? 'Tour de Contrôle Nationale (12 Départements)' : effectiveOrg.name}
                 </h3>
                 <p className="text-xs text-zinc-300">
-                  Tutelle Loi 1901 • Récépissé : <strong className="text-white font-mono">{currentOrg.registration_number || 'REC-BZV-2024-N048'}</strong> • NIU : <strong className="text-emerald-300 font-mono">M08241100049281X</strong> • Conformité LBC/FT : <strong className="text-emerald-400">96/100 (Très Élevé)</strong>
+                  Tutelle Loi 1901 • Récépissé : <strong className="text-white font-mono">{effectiveOrg.registration_number || 'REC-BZV-2024-N048'}</strong> • NIU : <strong className="text-emerald-300 font-mono">M08241100049281X</strong> • Conformité LBC/FT : <strong className="text-emerald-400">96/100 (Très Élevé)</strong>
                 </p>
               </div>
 
@@ -217,7 +199,10 @@ export default function DashboardOverview() {
                 <div className="flex items-center bg-black/50 p-1 rounded-lg border border-emerald-500/30">
                   <button
                     type="button"
-                    onClick={() => setViewMode('association')}
+                    onClick={() => {
+                      setViewMode('association');
+                      setDemoPersona('association');
+                    }}
                     className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
                       viewMode === 'association'
                         ? 'bg-emerald-600 text-white shadow'
@@ -228,7 +213,10 @@ export default function DashboardOverview() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setViewMode('regulator')}
+                    onClick={() => {
+                      setViewMode('regulator');
+                      setDemoPersona('regulator');
+                    }}
                     className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
                       viewMode === 'regulator'
                         ? 'bg-emerald-600 text-white shadow'
@@ -460,8 +448,8 @@ export default function DashboardOverview() {
           {/* Header Association */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-bold">{currentOrg.name}</h1>
-              <p className="text-muted-foreground">{currentOrg.city}, {currentOrg.province}</p>
+              <h1 className="text-2xl font-bold">{effectiveOrg.name}</h1>
+              <p className="text-muted-foreground">{effectiveOrg.city}, {effectiveOrg.province}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Button
@@ -617,14 +605,14 @@ export default function DashboardOverview() {
         open={!!selectedTx}
         onOpenChange={(open) => !open && setSelectedTx(null)}
         transaction={selectedTx}
-        organization={currentOrg}
+        organization={effectiveOrg}
       />
 
       {/* Modal Compte d'Emploi des Ressources (CER 2026) */}
       <CerReportModal
         open={showCerModal}
         onOpenChange={setShowCerModal}
-        organization={currentOrg}
+        organization={effectiveOrg}
       />
     </div>
   );

@@ -6,6 +6,8 @@ import { supabase } from '@/lib/supabase-client';
 import type { Profile, Organization, OrganizationMember } from '@/lib/types';
 import { MOCK_ORGANIZATION } from '@/lib/mock-data';
 
+export type DemoPersona = 'adherent' | 'association' | 'regulator';
+
 interface AuthContextValue {
   user: User | null;
   session: Session | null;
@@ -13,6 +15,8 @@ interface AuthContextValue {
   organizations: (OrganizationMember & { organization: Organization })[];
   currentOrg: Organization | null;
   setCurrentOrg: (org: Organization | null) => void;
+  demoPersona: DemoPersona;
+  setDemoPersona: (persona: DemoPersona) => void;
   loading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -23,8 +27,10 @@ const AuthContext = createContext<AuthContextValue>({
   session: null,
   profile: null,
   organizations: [],
-  currentOrg: null,
+  currentOrg: MOCK_ORGANIZATION,
   setCurrentOrg: () => {},
+  demoPersona: 'association',
+  setDemoPersona: () => {},
   loading: true,
   signOut: async () => {},
   refreshProfile: async () => {},
@@ -35,7 +41,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [organizations, setOrganizations] = useState<(OrganizationMember & { organization: Organization })[]>([]);
-  const [currentOrg, setCurrentOrg] = useState<Organization | null>(null);
+  const [currentOrg, setCurrentOrg] = useState<Organization | null>(MOCK_ORGANIZATION);
+  const [demoPersona, setDemoPersona] = useState<DemoPersona>('association');
   const [loading, setLoading] = useState(true);
 
   const loadUserData = async (userId: string) => {
@@ -116,6 +123,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
+        const email = session.user.email?.toLowerCase() || '';
+        if (email.includes('adherent')) {
+          setDemoPersona('adherent');
+        } else if (email.includes('dgifn') || email.includes('finances')) {
+          setDemoPersona('regulator');
+        }
         loadUserData(session.user.id).finally(() => setLoading(false));
       } else {
         setLoading(false);
@@ -128,11 +141,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
+          const email = session.user.email?.toLowerCase() || '';
+          if (email.includes('adherent')) {
+            setDemoPersona('adherent');
+          } else if (email.includes('dgifn') || email.includes('finances')) {
+            setDemoPersona('regulator');
+          }
           await loadUserData(session.user.id);
         } else {
           setProfile(null);
           setOrganizations([]);
-          setCurrentOrg(null);
+          setCurrentOrg(MOCK_ORGANIZATION);
         }
         setLoading(false);
       })();
@@ -150,7 +169,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setProfile(null);
     setOrganizations([]);
-    setCurrentOrg(null);
+    setCurrentOrg(MOCK_ORGANIZATION);
+    setDemoPersona('association');
   };
 
   const refreshProfile = async () => {
@@ -168,6 +188,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         organizations,
         currentOrg,
         setCurrentOrg,
+        demoPersona,
+        setDemoPersona,
         loading,
         signOut,
         refreshProfile,

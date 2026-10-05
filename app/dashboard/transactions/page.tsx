@@ -1,24 +1,27 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { Receipt, Download, TrendingUp, TrendingDown, Filter, Shield, FileText } from 'lucide-react';
+import { Receipt, Download, TrendingUp, TrendingDown, Filter, Shield, FileText, FileCheck, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ReceiptModal } from '@/components/receipt-modal';
+import { CerReportModal } from '@/components/cer-report-modal';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 import { formatCurrency, formatCurrencyWithSymbol, formatDateTime, timeAgo, STATUS_LABELS, PROVIDER_LABELS, slugify } from '@/lib/constants';
-import { MOCK_TRANSACTIONS } from '@/lib/mock-data';
+import { MOCK_TRANSACTIONS, MOCK_ORGANIZATION } from '@/lib/mock-data';
 import type { Transaction } from '@/lib/types';
 
 export default function TransactionsPage() {
-  const { currentOrg } = useAuth();
+  const { currentOrg, demoPersona } = useAuth();
+  const effectiveOrg = currentOrg || MOCK_ORGANIZATION;
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+  const [showCerModal, setShowCerModal] = useState(false);
 
   useEffect(() => {
     if (!currentOrg) {
@@ -78,14 +81,60 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Transactions</h1>
-          <p className="text-muted-foreground">Tracabilite complete des flux financiers</p>
+      {/* Bannière Adhérent (Grace Moukassa) */}
+      {demoPersona === 'adherent' && (
+        <Card className="border-emerald-500/40 bg-gradient-to-r from-emerald-950 via-slate-900 to-zinc-950 text-white shadow-md">
+          <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <p className="text-xs uppercase text-emerald-400 font-bold">Vos Reçus Fiscaux Personnels</p>
+              <h3 className="text-base font-bold text-white">Grace Moukassa • Donateur & Adhérente</h3>
+              <p className="text-xs text-zinc-300">
+                Vos versements (Don de 25 000 FCFA & Cotisation de 10 000 FCFA) ouvrent droit à une déduction fiscale certifiée DGIFN.
+              </p>
+            </div>
+            <Badge variant="outline" className="border-emerald-500 text-emerald-300 text-xs shrink-0 font-medium">
+              Loi du 1er Juillet 1901
+            </Badge>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Bannière Régulateur (DGIFN) */}
+      {demoPersona === 'regulator' && (
+        <div className="rounded-xl border border-emerald-600/40 bg-emerald-50/50 p-4 text-xs text-emerald-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Shield className="h-4 w-4 text-emerald-700 shrink-0" />
+            <span>
+              <strong>Registre National des Flux Financiers Associatifs</strong> • Surveillance en continu des seuils de vigilance ANIF et des reversements bancaires vers UBA Congo.
+            </span>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => setShowCerModal(true)}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs gap-1.5 shrink-0"
+          >
+            <FileCheck className="h-3.5 w-3.5" /> Compte d'Emploi des Ressources (CER 2026)
+          </Button>
         </div>
-        <Button variant="outline" onClick={exportCSV} disabled={filtered.length === 0}>
-          <Download className="mr-2 h-4 w-4" /> Exporter CSV
-        </Button>
+      )}
+
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">Transactions & Traçabilité</h1>
+          <p className="text-muted-foreground">Registre certifié des libéralités et reversements bancaires</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setShowCerModal(true)}
+            className="border-emerald-600 text-emerald-800 hover:bg-emerald-50 gap-1.5 text-xs"
+          >
+            <FileCheck className="h-4 w-4" /> Rapport CER 2026
+          </Button>
+          <Button variant="outline" onClick={exportCSV} disabled={filtered.length === 0} className="gap-1.5 text-xs">
+            <Download className="h-4 w-4" /> Exporter CSV
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -221,7 +270,14 @@ export default function TransactionsPage() {
         open={!!selectedTx}
         onOpenChange={(open) => !open && setSelectedTx(null)}
         transaction={selectedTx}
-        organization={currentOrg}
+        organization={effectiveOrg}
+      />
+
+      {/* Compte d'Emploi des Ressources (CER 2026) Modal */}
+      <CerReportModal
+        open={showCerModal}
+        onOpenChange={setShowCerModal}
+        organization={effectiveOrg}
       />
     </div>
   );

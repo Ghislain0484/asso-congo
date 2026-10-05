@@ -58,9 +58,9 @@ export function ReceiptModal({ open, onOpenChange, transaction, donation, organi
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl p-0 overflow-hidden print:m-0 print:p-0 print:border-none print:shadow-none print:w-full">
         {/* Printable Area */}
-        <div ref={printRef} className="p-6 md:p-8 bg-white text-zinc-900 print:p-8 print:text-black">
+        <div ref={printRef} className="printable-document p-6 md:p-8 bg-white text-zinc-900 print:p-4 print:text-black">
           {/* Header République du Congo */}
-          <div className="border-b-2 border-emerald-700 pb-4 mb-6">
+          <div className="avoid-break border-b-2 border-emerald-700 pb-4 mb-6">
             <div className="flex items-center justify-between text-xs text-zinc-500 uppercase tracking-widest font-semibold border-b border-zinc-200 pb-2 mb-3">
               <span className="flex items-center gap-1.5 text-emerald-800">
                 <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
@@ -90,7 +90,7 @@ export function ReceiptModal({ open, onOpenChange, transaction, donation, organi
           </div>
 
           {/* Section Association & Donateur (2 colonnes) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="avoid-break grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             {/* Bénéficiaire */}
             <div className="rounded-lg border border-zinc-200 bg-zinc-50/70 p-3.5 text-xs">
               <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider mb-1 flex items-center gap-1">
@@ -132,7 +132,7 @@ export function ReceiptModal({ open, onOpenChange, transaction, donation, organi
           </div>
 
           {/* Montant & Motif */}
-          <div className="rounded-lg border-2 border-emerald-600/30 bg-emerald-50/40 p-4 mb-6">
+          <div className="avoid-break rounded-lg border-2 border-emerald-600/30 bg-emerald-50/40 p-4 mb-6">
             <div className="flex items-baseline justify-between border-b border-emerald-200/60 pb-3 mb-3">
               <div>
                 <span className="text-xs uppercase tracking-wider font-semibold text-emerald-900">Montant net perçu</span>
@@ -160,7 +160,7 @@ export function ReceiptModal({ open, onOpenChange, transaction, donation, organi
           </div>
 
           {/* Sceau & Signature */}
-          <div className="grid grid-cols-2 gap-4 pt-3 border-t border-zinc-200 text-xs">
+          <div className="avoid-break grid grid-cols-2 gap-4 pt-3 border-t border-zinc-200 text-xs">
             {/* QR Code & Vérification */}
             <div className="flex items-center gap-3">
               <div className="w-16 h-16 border border-zinc-300 rounded p-1 bg-white flex items-center justify-center shrink-0">

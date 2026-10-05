@@ -15,7 +15,7 @@ import { MOCK_ORGANIZATION } from '@/lib/mock-data';
 import type { Organization } from '@/lib/types';
 
 export default function SettingsPage() {
-  const { currentOrg, refreshProfile } = useAuth();
+  const { currentOrg, refreshProfile, demoPersona } = useAuth();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<Partial<Organization>>(currentOrg || MOCK_ORGANIZATION);
@@ -61,9 +61,24 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Bannière Régulateur (DGIFN) */}
+      {demoPersona === 'regulator' && (
+        <div className="rounded-xl border border-emerald-600/40 bg-emerald-50/50 p-4 text-xs text-emerald-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Shield className="h-4 w-4 text-emerald-700 shrink-0" />
+            <span>
+              <strong>Dossier d'Agrément & Surveillance Réglementaire</strong> • Dossier juridique validé par la Préfecture et le Ministère des Finances. Statuts conformes à la Loi du 1er Juillet 1901.
+            </span>
+          </div>
+          <Badge variant="outline" className="border-emerald-700 text-emerald-800 bg-white font-medium shrink-0">
+            Agrément N° DGIFN-2024
+          </Badge>
+        </div>
+      )}
+
       <div>
-        <h1 className="text-2xl font-bold">Parametres</h1>
-        <p className="text-muted-foreground">Configurez le profil de votre ONG</p>
+        <h1 className="text-2xl font-bold">Paramètres & Dossier Officiel</h1>
+        <p className="text-muted-foreground">Profil statutaire, conformité administrative et coordonnées de l'ONG</p>
       </div>
 
       <form onSubmit={handleSave} className="space-y-6">

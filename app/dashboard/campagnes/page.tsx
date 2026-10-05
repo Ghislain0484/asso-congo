@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Plus, Target, TrendingUp } from 'lucide-react';
+import { Plus, Target, TrendingUp, Shield, Heart } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,11 +14,12 @@ import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase-client';
 import { formatCurrency, slugify, STATUS_LABELS } from '@/lib/constants';
-import { MOCK_CAMPAIGNS } from '@/lib/mock-data';
+import { MOCK_CAMPAIGNS, MOCK_ORGANIZATION } from '@/lib/mock-data';
 import type { Campaign } from '@/lib/types';
 
 export default function CampaignsPage() {
-  const { currentOrg } = useAuth();
+  const { currentOrg, demoPersona } = useAuth();
+  const effectiveOrg = currentOrg || MOCK_ORGANIZATION;
   const { toast } = useToast();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,10 +95,45 @@ export default function CampaignsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Bannière Adhérent (Grace Moukassa) */}
+      {demoPersona === 'adherent' && (
+        <Card className="border-emerald-500/40 bg-gradient-to-r from-emerald-950 via-slate-900 to-zinc-950 text-white shadow-md">
+          <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <p className="text-xs uppercase text-emerald-400 font-bold">Projet Soutenu par vos dons</p>
+              <h3 className="text-base font-bold text-white">Réhabilitation de l'École Primaire de Bacongo</h3>
+              <p className="text-xs text-zinc-300">
+                Vous avez contribué à hauteur de 25 000 FCFA. Suivez l'impact direct de vos dons en temps réel ci-dessous.
+              </p>
+            </div>
+            <Link href={`/o/${effectiveOrg.slug}/campagnes/rehabilitation-ecole-bacongo`} target="_blank">
+              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold gap-2 shrink-0">
+                <Heart className="h-4 w-4" /> Faire un don supplémentaire
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Bannière Régulateur (DGIFN) */}
+      {demoPersona === 'regulator' && (
+        <div className="rounded-xl border border-emerald-600/40 bg-emerald-50/50 p-4 text-xs text-emerald-900 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Shield className="h-4 w-4 text-emerald-700 shrink-0" />
+            <span>
+              <strong>Surveillance des Appels à la Générosité Publique (Loi 1901)</strong> • Contrôle de la traçabilité des collectes et vérification du ratio social (82% alloué aux missions de terrain).
+            </span>
+          </div>
+          <Badge variant="outline" className="border-emerald-700 text-emerald-800 bg-white font-medium shrink-0">
+            Agrément Campagnes Conforme
+          </Badge>
+        </div>
+      )}
+
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Campagnes</h1>
-          <p className="text-muted-foreground">{campaigns.length} campagnes au total</p>
+          <h1 className="text-2xl font-bold">Campagnes de Financement Solidaire</h1>
+          <p className="text-muted-foreground">{campaigns.length} campagnes actives</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { Users, Plus, Search, Download, Upload, Trash2, MoreVertical, Mail, Phone, CreditCard, CheckCircle2 } from 'lucide-react';
+import { Users, Plus, Search, Download, Upload, Trash2, MoreVertical, Mail, Phone, CreditCard, CheckCircle2, Shield } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,7 +18,7 @@ import { MOCK_MEMBERS } from '@/lib/mock-data';
 import type { Member, MembershipType } from '@/lib/types';
 
 export default function MembersPage() {
-  const { currentOrg } = useAuth();
+  const { currentOrg, demoPersona } = useAuth();
   const { toast } = useToast();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
@@ -163,10 +163,52 @@ export default function MembersPage() {
 
   return (
     <div className="space-y-6">
+      {/* Bannière Adhérent (Grace Moukassa) */}
+      {demoPersona === 'adherent' && (
+        <Card className="border-emerald-500/40 bg-gradient-to-r from-emerald-950 via-slate-900 to-zinc-950 text-white shadow-md">
+          <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-emerald-600 flex items-center justify-center font-bold text-white text-lg shrink-0">
+                GM
+              </div>
+              <div>
+                <p className="text-xs uppercase text-emerald-400 font-bold">Votre Carte Numérique 2026</p>
+                <h3 className="text-base font-bold text-white">Grace Moukassa • Adhérente Active</h3>
+                <p className="text-xs text-zinc-300">Matricule : CG-BZV-2026-00101 • Cotisation à jour (10 000 FCFA acquittés)</p>
+              </div>
+            </div>
+            <Button
+              onClick={() => {
+                const gm = members.find((m) => m.email === 'adherent@espoircongo.cg') || members[0];
+                setSelectedMember(gm);
+              }}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold gap-2 shrink-0"
+            >
+              <CreditCard className="h-4 w-4" /> Afficher & Imprimer ma Carte
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Bannière Régulateur (DGIFN) */}
+      {demoPersona === 'regulator' && (
+        <div className="rounded-xl border border-emerald-600/40 bg-emerald-50/50 p-4 text-xs text-emerald-900 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Shield className="h-4 w-4 text-emerald-700 shrink-0" />
+            <span>
+              <strong>Registre Statutory des Membres & Dirigeants</strong> • Conforme aux exigences de déclaration préfectorale de la Loi 1901.
+            </span>
+          </div>
+          <Badge variant="outline" className="border-emerald-700 text-emerald-800 bg-white font-medium shrink-0">
+            Contrôle DGIFN Certifié
+          </Badge>
+        </div>
+      )}
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Membres</h1>
-          <p className="text-muted-foreground">{members.length} membres au total</p>
+          <h1 className="text-2xl font-bold">Membres & CRM</h1>
+          <p className="text-muted-foreground">{members.length} membres répertoriés</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <input ref={fileInputRef} type="file" accept=".csv" onChange={handleImport} className="hidden" />

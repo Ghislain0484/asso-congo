@@ -57,9 +57,9 @@ export function CerReportModal({ open, onOpenChange, organization }: CerReportMo
         </DialogHeader>
 
         {/* Zone Imprimable */}
-        <div ref={printRef} className="overflow-y-auto p-6 md:p-8 bg-white text-zinc-900 print:p-6 print:text-black space-y-6">
+        <div ref={printRef} className="printable-document overflow-y-auto p-6 md:p-8 bg-white text-zinc-900 print:overflow-visible print:h-auto print:p-4 print:text-black space-y-6">
           {/* En-tête République du Congo */}
-          <div className="border-b-2 border-emerald-800 pb-4">
+          <div className="avoid-break border-b-2 border-emerald-800 pb-4">
             <div className="flex items-center justify-between text-xs text-zinc-600 uppercase tracking-widest font-semibold border-b border-zinc-200 pb-2 mb-3">
               <div className="flex items-center gap-2 text-emerald-900 font-bold">
                 <span className="inline-block w-3 h-3 rounded-full bg-emerald-600"></span>
@@ -89,7 +89,7 @@ export function CerReportModal({ open, onOpenChange, organization }: CerReportMo
           </div>
 
           {/* Fiche d'identification de l'association */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-lg border border-zinc-200 bg-zinc-50/80 p-4 text-xs">
+          <div className="avoid-break grid grid-cols-1 md:grid-cols-2 gap-4 rounded-lg border border-zinc-200 bg-zinc-50/80 p-4 text-xs">
             <div>
               <p className="text-[10px] font-bold text-emerald-900 uppercase tracking-wider mb-1 flex items-center gap-1">
                 <Building2 className="h-3 w-3" /> Identification Statutaire
@@ -111,7 +111,7 @@ export function CerReportModal({ open, onOpenChange, organization }: CerReportMo
           </div>
 
           {/* Tableau 1 : Tableau des Ressources Collectées */}
-          <div className="space-y-2">
+          <div className="avoid-break space-y-2">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-950 flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-600"></span> 1. ORIGINE DES RESSOURCES COLLECTÉES (ENTRÉES)
@@ -146,7 +146,7 @@ export function CerReportModal({ open, onOpenChange, organization }: CerReportMo
           </div>
 
           {/* Tableau 2 : Tableau des Emplois des Fonds */}
-          <div className="space-y-2">
+          <div className="avoid-break space-y-2">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-950 flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-600"></span> 2. EMPLOI ET AFFECTATION DES FONDS SUR LE TERRAIN (SORTIES)
@@ -185,7 +185,7 @@ export function CerReportModal({ open, onOpenChange, organization }: CerReportMo
           </div>
 
           {/* Rapprochement Bancaire et Trésorerie */}
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50/30 p-3.5 text-xs space-y-2">
+          <div className="avoid-break rounded-lg border border-emerald-200 bg-emerald-50/30 p-3.5 text-xs space-y-2">
             <p className="font-bold text-emerald-950 flex items-center gap-1.5">
               <Shield className="h-4 w-4 text-emerald-700" /> Rapprochement Bancaire & Trésorerie Déclarée (Fin de Période)
             </p>
@@ -211,7 +211,7 @@ export function CerReportModal({ open, onOpenChange, organization }: CerReportMo
           </div>
 
           {/* Visas Officiels et Signatures */}
-          <div className="pt-4 border-t-2 border-zinc-200 grid grid-cols-3 gap-4 text-xs">
+          <div className="avoid-break pt-4 border-t-2 border-zinc-200 grid grid-cols-3 gap-4 text-xs">
             {/* Signature Trésorier */}
             <div className="border border-zinc-200 rounded p-3 text-center bg-zinc-50/50">
               <p className="text-[10px] uppercase font-bold text-zinc-500">Le Trésorier Général</p>

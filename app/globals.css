@@ -128,3 +128,113 @@
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.5);
 }
+
+/* ==============================================================================
+   MOTEUR D'IMPRESSION UNIFIÉ A4 (PRINT ENGINE POUR REÇUS, CER ET CARTES)
+   ============================================================================== */
+@media print {
+  /* Force le respect strict des couleurs d'impression (cachets, drapeaux, badges) */
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Configuration du format A4 */
+  @page {
+    size: A4 portrait;
+    margin: 8mm 10mm;
+  }
+
+  /* Masquer l'UI de l'application et les éléments non imprimables */
+  header,
+  aside,
+  nav,
+  footer,
+  button,
+  .print-hidden,
+  .print\:hidden,
+  [data-print-hide="true"] {
+    display: none !important;
+  }
+
+  /* Déverrouiller le body pour permettre l'impression multi-pages */
+  html,
+  body {
+    width: 100% !important;
+    min-height: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #111827 !important;
+    overflow: visible !important;
+  }
+
+  /* Déneutraliser le portal de Radix Dialog pour l'impression */
+  [data-radix-portal] {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Supprimer complètement le fond sombre (backdrop) de la modale */
+  [data-radix-portal] > div[data-state]:not([role="dialog"]),
+  div[data-state][class*="bg-black"],
+  div[class*="backdrop-blur"] {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+  }
+
+  /* Rendre le contenu du dialogue fluide et pleine page */
+  div[role="dialog"] {
+    position: static !important;
+    transform: none !important;
+    inset: auto !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #111827 !important;
+    overflow: visible !important;
+  }
+
+  /* Conteneur principal du document imprimable */
+  .printable-document {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #111827 !important;
+    overflow: visible !important;
+  }
+
+  /* Éviter les coupures de page disgracieuses au milieu d'un tableau ou d'un bloc de signature */
+  .avoid-break,
+  .page-break-avoid,
+  table,
+  tr,
+  .border-2 {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Forcer le saut de page si nécessaire */
+  .force-page-break {
+    break-before: page !important;
+    page-break-before: always !important;
+  }
+}
