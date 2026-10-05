@@ -2,15 +2,14 @@
 -- ASSOCONGO - SCRIPT DÉFINITIF DE CORRECTION RLS ET INITIALISATION COMPLÈTE
 -- 1. Élimine 100% des erreurs de récursion infinie (HTTP 500) via SECURITY DEFINER
 -- 2. Permet l'inscription directe sans blocage (/register)
--- 3. Idempotent : localise les utilisateurs existants par email pour éviter
---    l'erreur 23505 (duplicate key value violates unique constraint "users_email_partial_key")
--- 4. Initialise les 4 comptes de démonstration et les données congolaises
+-- 3. Conforme à 100% au schéma de la base (zéro colonne inexistante)
+-- 4. Idempotent : localise les utilisateurs par email pour éviter l'erreur 23505
 -- ==============================================================================
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- ------------------------------------------------------------------------------
--- ÉTAPE 1 : FONCTIONS DE CONTRÔLE SÉCURISÉES (Bypass RLS pour éviter la récursion)
+-- ÉTAPE 1 : FONCTIONS DE CONTRÔLE SÉCURISÉES (Bypass RLS pour éliminer le 500)
 -- ------------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.is_member_of_org(p_org_id uuid)
@@ -121,11 +120,6 @@ DROP POLICY IF EXISTS "events_insert" ON events;
 CREATE POLICY "events_insert" ON events FOR INSERT TO authenticated
   WITH CHECK (public.is_member_of_org(organization_id));
 
-DROP POLICY IF EXISTS "events_update" ON events;
-CREATE POLICY "events_update" ON events FOR UPDATE TO authenticated
-  USING (deleted_at IS NULL AND public.is_member_of_org(organization_id))
-  WITH CHECK (public.is_member_of_org(organization_id));
-
 -- 6. EVENT_REGISTRATIONS
 ALTER TABLE event_registrations ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "event_regs_select_org" ON event_registrations;
@@ -185,13 +179,12 @@ ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "audit_all" ON audit_logs;
 CREATE POLICY "audit_all" ON audit_logs FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
 
--- Permissions globales pour PostgREST
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
 
 -- ------------------------------------------------------------------------------
--- ÉTAPE 3 : DONNÉES DE DÉMONSTRATION IDEMPOTENTES (Zéro conflit d'email ni d'ID)
+-- ÉTAPE 3 : DONNÉES DE DÉMONSTRATION IDEMPOTENTES (Alignées à 100% sur le schéma)
 -- ------------------------------------------------------------------------------
 
 DO $$
@@ -213,7 +206,7 @@ DECLARE
   evt_marathon UUID := 'd3333333-3333-3333-3333-333333333333';
 BEGIN
 
-  -- 1. LOCALISATION OU CRÉATION SÉCURISÉE DES 4 COMPTES AUTH (Garantit l'absence d'erreur 23505)
+  -- 1. LOCALISATION OU CRÉATION SÉCURISÉE DES 4 COMPTES AUTH
 
   -- Compte 1 : DGIFN
   SELECT id INTO uid_dgifn FROM auth.users WHERE email = 'dgifn.audit@finances.gouv.cg' LIMIT 1;
@@ -285,10 +278,10 @@ BEGIN
     full_name = EXCLUDED.full_name,
     platform_role = EXCLUDED.platform_role;
 
-  -- 3. ORGANISATIONS CONGOLAISES
+  -- 3. ORGANISATIONS CONGOLAISES (Colonnes strictes conformes à la table organizations)
   INSERT INTO organizations (
     id, name, acronym, slug, description, province, city, domains,
-    status, is_verified, email, phone, receipt_number_prefix, last_receipt_sequence, theme_color
+    status, is_verified, email, phone, primary_color, transparency_score
   ) VALUES
   (
     org_aec,
@@ -303,9 +296,8 @@ BEGIN
     true,
     'contact@espoircongo.cg',
     '+242 06 600 00 03',
-    'AEC-2026-',
-    142,
-    '#059669'
+    '#059669',
+    95
   ),
   (
     org_sopn,
@@ -320,9 +312,8 @@ BEGIN
     true,
     'contact@orphelins-pnr.cg',
     '+242 05 520 12 34',
-    'SOPN-2026-',
-    68,
-    '#2563eb'
+    '#2563eb',
+    92
   ),
   (
     org_asev,
@@ -337,15 +328,16 @@ BEGIN
     true,
     'contact@asev-pool.cg',
     '+242 06 910 45 67',
-    'ASEV-2026-',
-    34,
-    '#16a34a'
+    '#16a34a',
+    88
   )
   ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
     description = EXCLUDED.description,
     status = EXCLUDED.status,
-    is_verified = EXCLUDED.is_verified;
+    is_verified = EXCLUDED.is_verified,
+    primary_color = EXCLUDED.primary_color,
+    transparency_score = EXCLUDED.transparency_score;
 
   -- 4. ADHÉSIONS MEMBRES OFFICIELS
   INSERT INTO organization_members (organization_id, user_id, role) VALUES
@@ -355,7 +347,7 @@ BEGIN
   (org_aec, uid_memb, 'member')
   ON CONFLICT (organization_id, user_id) DO UPDATE SET role = EXCLUDED.role;
 
-  -- Rendre tous les autres utilisateurs authentifiés membres admin d'AEC pour qu'aucun compte ne soit vide
+  -- Rattachement automatique de tous les autres comptes de la base pour qu'aucun compte ne soit vide
   INSERT INTO organization_members (organization_id, user_id, role)
   SELECT org_aec, u.id, 'admin'
   FROM auth.users u
@@ -365,7 +357,7 @@ BEGIN
   -- 5. CAMPAGNES DE FINANCEMENT SOLIDAIRE
   INSERT INTO campaigns (
     id, organization_id, title, slug, description, goal_amount,
-    current_amount, donors_count, status, category, is_featured
+    current_amount, currency, status, category, is_featured
   ) VALUES
   (
     camp_bacongo,
@@ -375,7 +367,7 @@ BEGIN
     'Campagne citoyenne pour financer la toiture de 4 salles de classe, 120 tables-bancs neufs et le raccordement en eau potable pour 450 élèves.',
     3500000,
     3380000,
-    84,
+    'XAF',
     'active',
     'education',
     true
@@ -388,7 +380,7 @@ BEGIN
     'Installation de 2 forages d''eau potable solaires et kits de premiers secours pour 3 villages de Kinkala.',
     4200000,
     1850000,
-    36,
+    'XAF',
     'active',
     'sante',
     false
@@ -396,7 +388,7 @@ BEGIN
   ON CONFLICT (id) DO UPDATE SET
     title = EXCLUDED.title,
     current_amount = EXCLUDED.current_amount,
-    donors_count = EXCLUDED.donors_count;
+    goal_amount = EXCLUDED.goal_amount;
 
   -- 6. ÉVÉNEMENTS COMMUNAUTAIRES
   INSERT INTO events (
@@ -469,7 +461,7 @@ BEGIN
   (org_aec, 'Dieudonné', 'Nzamba', 'dieu.nzamba@hotmail.com', '+242 06 655 78 90', 'Brazzaville', 'Brazzaville', 'member', 15000, 'active', 'CG-2026-00104'),
   (org_aec, 'Priscille', 'Bikoumou', 'priscille.b@gmail.com', '+242 05 533 11 22', 'Brazzaville', 'Brazzaville', 'volunteer', 10000, 'active', 'CG-2026-00105');
 
-  -- 8. TRANSACTIONS AVEC TRAÇABILITÉ MOBIL MONEY (MTN MoMo, Airtel Money, UBA)
+  -- 8. TRANSACTIONS AVEC TRAÇABILITÉ MOBILE MONEY (MTN MoMo, Airtel Money, UBA)
   DELETE FROM transactions WHERE organization_id = org_aec;
   INSERT INTO transactions (
     organization_id, type, amount, currency, status,
