@@ -1,7 +1,7 @@
 'use client';
 
 import { Printer, QrCode, Shield, CheckCircle2, Building2, UserCheck } from 'lucide-react';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatDate, APP_NAME } from '@/lib/constants';
@@ -27,6 +27,10 @@ export function MembershipCardModal({ open, onOpenChange, member, organization }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg p-0 overflow-hidden print:m-0 print:p-0 print:border-none print:shadow-none print:max-w-none print:w-full">
+        <DialogHeader className="sr-only">
+          <DialogTitle>Carte d'Adhérent Officielle 2026</DialogTitle>
+          <DialogDescription>Attestation d'affiliation et carte de membre officielle sous le régime de la Loi 1901</DialogDescription>
+        </DialogHeader>
         {/* Printable Document Container */}
         <div className="printable-document bg-white p-6 md:p-8 print:p-8 text-zinc-900">
           

@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import { Printer, Download, CheckCircle2, Shield, QrCode, Building2, TrendingUp, FileCheck, FileSpreadsheet } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatCurrencyWithSymbol, formatDate } from '@/lib/constants';
@@ -48,7 +48,7 @@ export function CerReportModal({ open, onOpenChange, organization }: CerReportMo
             </div>
             <div>
               <DialogTitle className="text-base font-bold">Compte d'Emploi des Ressources (CER) • Exercice 2026</DialogTitle>
-              <p className="text-xs text-muted-foreground">Document réglementaire conforme aux exigences DGIFN et de la Loi du 1er Juillet 1901</p>
+              <DialogDescription className="text-xs text-muted-foreground">Document réglementaire conforme aux exigences DGIFN et de la Loi du 1er Juillet 1901</DialogDescription>
             </div>
           </div>
           <Button size="sm" onClick={handlePrint} className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">

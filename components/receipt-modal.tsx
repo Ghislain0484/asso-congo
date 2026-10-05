@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import { Printer, Download, CheckCircle2, Shield, QrCode, Building2, Heart } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatDateTime, numberToFrenchWords, APP_NAME } from '@/lib/constants';
@@ -57,6 +57,10 @@ export function ReceiptModal({ open, onOpenChange, transaction, donation, organi
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl p-0 overflow-hidden print:m-0 print:p-0 print:border-none print:shadow-none print:w-full">
+        <DialogHeader className="sr-only">
+          <DialogTitle>Reçu Fiscal Numérique DGIFN</DialogTitle>
+          <DialogDescription>Attestation officielle de versement et déduction fiscale DGIFN</DialogDescription>
+        </DialogHeader>
         {/* Printable Area */}
         <div ref={printRef} className="printable-document p-6 md:p-8 bg-white text-zinc-900 print:p-4 print:text-black">
           {/* Header République du Congo */}

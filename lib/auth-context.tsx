@@ -41,18 +41,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [organizations, setOrganizations] = useState<(OrganizationMember & { organization: Organization })[]>([]);
-  const [currentOrg, setCurrentOrg] = useState<Organization | null>(MOCK_ORGANIZATION);
+  const [currentOrg, setCurrentOrg] = useState<Organization | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('assocongo_custom_org');
+        if (stored) return JSON.parse(stored);
+      } catch {}
+    }
+    return MOCK_ORGANIZATION;
+  });
   const [demoPersona, setDemoPersona] = useState<DemoPersona>('association');
   const [loading, setLoading] = useState(true);
 
   const loadUserData = async (userId: string) => {
     try {
+      // 1. Priorité à l'organisation personnalisée récemment créée si présente
+      let customOrg: Organization | null = null;
+      if (typeof window !== 'undefined') {
+        try {
+          const stored = localStorage.getItem('assocongo_custom_org');
+          if (stored) customOrg = JSON.parse(stored);
+        } catch {}
+      }
+
       const { data: profileData } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
       setProfile(profileData as Profile | null);
+
+      if (customOrg) {
+        setCurrentOrg(customOrg);
+        setOrganizations([
+          {
+            id: `membership-${customOrg.id}`,
+            organization_id: customOrg.id,
+            user_id: userId,
+            role: 'admin',
+            invited_by: null,
+            accepted_at: new Date().toISOString(),
+            deleted_at: null,
+            created_at: new Date().toISOString(),
+            organization: customOrg,
+          },
+        ]);
+        return;
+      }
 
       const { data: orgMembers } = await supabase
         .from('organization_members')
@@ -111,7 +146,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch (err) {
-      console.error('Error loading user data:', err);
+      console.warn('Note: session information loaded with fallback:', err);
+      setCurrentOrg(MOCK_ORGANIZATION);
     }
   };
 

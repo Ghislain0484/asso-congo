@@ -1,7 +1,7 @@
 'use client';
 
 import { Printer, QrCode, Shield, CheckCircle2, Calendar, MapPin, Clock, Ticket } from 'lucide-react';
-import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatDate, formatDateTime, APP_NAME } from '@/lib/constants';
@@ -40,6 +40,10 @@ export function EventTicketModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg p-0 overflow-hidden print:m-0 print:p-0 print:border-none print:shadow-none print:max-w-none print:w-full">
+        <DialogHeader className="sr-only">
+          <DialogTitle>Billet Électronique & Pass Événement</DialogTitle>
+          <DialogDescription>Titre d'accès officiel sécurisé avec QR code pour l'événement</DialogDescription>
+        </DialogHeader>
         <div className="printable-document bg-white p-6 md:p-8 print:p-8 text-zinc-900">
           
           {/* Header officiel */}

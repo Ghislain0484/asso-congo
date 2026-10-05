@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MembershipCardModal } from '@/components/membership-card-modal';
 import { useAuth } from '@/lib/auth-context';
@@ -225,6 +225,7 @@ export default function MembersPage() {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Ajouter un membre</DialogTitle>
+                <DialogDescription>Ajoutez un nouveau membre ou bénévole à votre association.</DialogDescription>
               </DialogHeader>
               <form onSubmit={handleAdd} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">

@@ -96,23 +96,36 @@ export default function DashboardOverview() {
       setLoading(true);
       const orgId = effectiveOrg.id;
 
-      const [donRes, memRes, campRes, evtRes, recentDonRes, recentTxRes, topCampRes, upcomingEvtRes] = await Promise.all([
-        supabase.from('donations').select('amount').eq('organization_id', orgId).eq('status', 'completed').is('deleted_at', null),
-        supabase.from('members').select('id').eq('organization_id', orgId).is('deleted_at', null),
-        supabase.from('campaigns').select('id').eq('organization_id', orgId).eq('status', 'active').is('deleted_at', null),
-        supabase.from('events').select('id').eq('organization_id', orgId).eq('status', 'active').is('deleted_at', null).gte('start_date', new Date().toISOString()),
-        supabase.from('donations').select('*').eq('organization_id', orgId).is('deleted_at', null).order('created_at', { ascending: false }).limit(5),
-        supabase.from('transactions').select('*').eq('organization_id', orgId).is('deleted_at', null).order('created_at', { ascending: false }).limit(8),
-        supabase.from('campaigns').select('*').eq('organization_id', orgId).is('deleted_at', null).order('current_amount', { ascending: false }).limit(4),
-        supabase.from('events').select('*').eq('organization_id', orgId).eq('status', 'active').is('deleted_at', null).gte('start_date', new Date().toISOString()).order('start_date', { ascending: true }).limit(3),
-      ]);
+      let donRes: any = { data: null };
+      let memRes: any = { data: null };
+      let campRes: any = { data: null };
+      let evtRes: any = { data: null };
+      let recentDonRes: any = { data: null };
+      let recentTxRes: any = { data: null };
+      let topCampRes: any = { data: null };
+      let upcomingEvtRes: any = { data: null };
 
-      const rawDonations = (recentDonRes.data || []) as Donation[];
-      const rawTransactions = (recentTxRes.data || []) as Transaction[];
-      const rawCampaigns = (topCampRes.data || []) as Campaign[];
-      const rawEvents = (upcomingEvtRes.data || []) as Event[];
+      try {
+        [donRes, memRes, campRes, evtRes, recentDonRes, recentTxRes, topCampRes, upcomingEvtRes] = await Promise.all([
+          supabase.from('donations').select('amount').eq('organization_id', orgId).eq('status', 'completed').is('deleted_at', null),
+          supabase.from('members').select('id').eq('organization_id', orgId).is('deleted_at', null),
+          supabase.from('campaigns').select('id').eq('organization_id', orgId).eq('status', 'active').is('deleted_at', null),
+          supabase.from('events').select('id').eq('organization_id', orgId).eq('status', 'active').is('deleted_at', null).gte('start_date', new Date().toISOString()),
+          supabase.from('donations').select('*').eq('organization_id', orgId).is('deleted_at', null).order('created_at', { ascending: false }).limit(5),
+          supabase.from('transactions').select('*').eq('organization_id', orgId).is('deleted_at', null).order('created_at', { ascending: false }).limit(8),
+          supabase.from('campaigns').select('*').eq('organization_id', orgId).is('deleted_at', null).order('current_amount', { ascending: false }).limit(4),
+          supabase.from('events').select('*').eq('organization_id', orgId).eq('status', 'active').is('deleted_at', null).gte('start_date', new Date().toISOString()).order('start_date', { ascending: true }).limit(3),
+        ]);
+      } catch (err) {
+        console.warn('Dashboard note: Utilisation des données de secours pour la démo:', err);
+      }
 
-      const hasDbData = (donRes.data && donRes.data.length > 0) || rawCampaigns.length > 0 || rawTransactions.length > 0;
+      const rawDonations = (recentDonRes?.data || []) as Donation[];
+      const rawTransactions = (recentTxRes?.data || []) as Transaction[];
+      const rawCampaigns = (topCampRes?.data || []) as Campaign[];
+      const rawEvents = (upcomingEvtRes?.data || []) as Event[];
+
+      const hasDbData = (donRes?.data && donRes.data.length > 0) || rawCampaigns.length > 0 || rawTransactions.length > 0;
 
       const txList = rawTransactions.length > 0 ? rawTransactions : MOCK_TRANSACTIONS;
       const inTx = txList.filter((t) => t.status === 'success' && t.type !== 'payout' && t.type !== 'refund');
