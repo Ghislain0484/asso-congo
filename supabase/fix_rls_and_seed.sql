@@ -2,7 +2,8 @@
 -- ASSOCONGO - SCRIPT DÉFINITIF DE CORRECTION RLS ET INITIALISATION COMPLÈTE
 -- 1. Élimine 100% des erreurs de récursion infinie (HTTP 500) via SECURITY DEFINER
 -- 2. Permet l'inscription directe sans blocage (/register)
--- 3. Idempotent : utilise ON CONFLICT (id) DO UPDATE (évite l'erreur 23505 duplicate key)
+-- 3. Idempotent : localise les utilisateurs existants par email pour éviter
+--    l'erreur 23505 (duplicate key value violates unique constraint "users_email_partial_key")
 -- 4. Initialise les 4 comptes de démonstration et les données congolaises
 -- ==============================================================================
 
@@ -190,15 +191,15 @@ GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
 
 -- ------------------------------------------------------------------------------
--- ÉTAPE 3 : DONNÉES DE DÉMONSTRATION IDEMPOTENTES (Zéro conflit de clé primaire)
+-- ÉTAPE 3 : DONNÉES DE DÉMONSTRATION IDEMPOTENTES (Zéro conflit d'email ni d'ID)
 -- ------------------------------------------------------------------------------
 
 DO $$
 DECLARE
-  uid_dgifn UUID := 'a1111111-1111-1111-1111-111111111111';
-  uid_dev   UUID := 'b2222222-2222-2222-2222-222222222222';
-  uid_asso  UUID := 'c3333333-3333-3333-3333-333333333333';
-  uid_memb  UUID := 'd4444444-4444-4444-4444-444444444444';
+  uid_dgifn UUID;
+  uid_dev   UUID;
+  uid_asso  UUID;
+  uid_memb  UUID;
   
   org_aec   UUID := 'e5555555-5555-5555-5555-555555555555';
   org_sopn  UUID := 'e6666666-6666-6666-6666-666666666666';
@@ -212,44 +213,69 @@ DECLARE
   evt_marathon UUID := 'd3333333-3333-3333-3333-333333333333';
 BEGIN
 
-  -- 1. Utilisateurs Auth (Création / Mise à jour)
-  INSERT INTO auth.users (
-    id, instance_id, email, encrypted_password, email_confirmed_at,
-    raw_app_meta_data, raw_user_meta_data, aud, role, created_at, updated_at
-  ) VALUES 
-  (
-    uid_dgifn, '00000000-0000-0000-0000-000000000000', 'dgifn.audit@finances.gouv.cg',
-    crypt('Demo2026!DGIFN', gen_salt('bf')), now(),
-    '{"provider":"email","providers":["email"]}'::jsonb,
-    '{"full_name":"DGIFN - Contrôle et Régulation Financière","phone":"+242 06 600 00 01"}'::jsonb,
-    'authenticated', 'authenticated', now(), now()
-  ),
-  (
-    uid_dev, '00000000-0000-0000-0000-000000000000', 'dev.support@assocongo.cg',
-    crypt('Demo2026!DEV', gen_salt('bf')), now(),
-    '{"provider":"email","providers":["email"]}'::jsonb,
-    '{"full_name":"Support Technique AssoCongo","phone":"+242 06 600 00 02"}'::jsonb,
-    'authenticated', 'authenticated', now(), now()
-  ),
-  (
-    uid_asso, '00000000-0000-0000-0000-000000000000', 'contact@espoircongo.cg',
-    crypt('Demo2026!ASSO', gen_salt('bf')), now(),
-    '{"provider":"email","providers":["email"]}'::jsonb,
-    '{"full_name":"Marien Ngouabi (Président Espoir Congo)","phone":"+242 06 600 00 03"}'::jsonb,
-    'authenticated', 'authenticated', now(), now()
-  ),
-  (
-    uid_memb, '00000000-0000-0000-0000-000000000000', 'adherent@espoircongo.cg',
-    crypt('Demo2026!MEMBER', gen_salt('bf')), now(),
-    '{"provider":"email","providers":["email"]}'::jsonb,
-    '{"full_name":"Grace Moukassa (Adhérente Active)","phone":"+242 05 500 00 04"}'::jsonb,
-    'authenticated', 'authenticated', now(), now()
-  )
-  ON CONFLICT (id) DO UPDATE SET
-    encrypted_password = EXCLUDED.encrypted_password,
-    raw_user_meta_data = EXCLUDED.raw_user_meta_data;
+  -- 1. LOCALISATION OU CRÉATION SÉCURISÉE DES 4 COMPTES AUTH (Garantit l'absence d'erreur 23505)
 
-  -- 2. Profils
+  -- Compte 1 : DGIFN
+  SELECT id INTO uid_dgifn FROM auth.users WHERE email = 'dgifn.audit@finances.gouv.cg' LIMIT 1;
+  IF uid_dgifn IS NULL THEN
+    uid_dgifn := 'a1111111-1111-1111-1111-111111111111';
+    INSERT INTO auth.users (id, instance_id, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, aud, role, created_at, updated_at)
+    VALUES (uid_dgifn, '00000000-0000-0000-0000-000000000000', 'dgifn.audit@finances.gouv.cg', crypt('Demo2026!DGIFN', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}'::jsonb, '{"full_name":"DGIFN - Contrôle et Régulation Financière","phone":"+242 06 600 00 01"}'::jsonb, 'authenticated', 'authenticated', now(), now());
+  ELSE
+    UPDATE auth.users SET
+      encrypted_password = crypt('Demo2026!DGIFN', gen_salt('bf')),
+      raw_user_meta_data = '{"full_name":"DGIFN - Contrôle et Régulation Financière","phone":"+242 06 600 00 01"}'::jsonb,
+      email_confirmed_at = COALESCE(email_confirmed_at, now()),
+      updated_at = now()
+    WHERE id = uid_dgifn;
+  END IF;
+
+  -- Compte 2 : Développeur & Support
+  SELECT id INTO uid_dev FROM auth.users WHERE email = 'dev.support@assocongo.cg' LIMIT 1;
+  IF uid_dev IS NULL THEN
+    uid_dev := 'b2222222-2222-2222-2222-222222222222';
+    INSERT INTO auth.users (id, instance_id, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, aud, role, created_at, updated_at)
+    VALUES (uid_dev, '00000000-0000-0000-0000-000000000000', 'dev.support@assocongo.cg', crypt('Demo2026!DEV', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}'::jsonb, '{"full_name":"Support Technique AssoCongo","phone":"+242 06 600 00 02"}'::jsonb, 'authenticated', 'authenticated', now(), now());
+  ELSE
+    UPDATE auth.users SET
+      encrypted_password = crypt('Demo2026!DEV', gen_salt('bf')),
+      raw_user_meta_data = '{"full_name":"Support Technique AssoCongo","phone":"+242 06 600 00 02"}'::jsonb,
+      email_confirmed_at = COALESCE(email_confirmed_at, now()),
+      updated_at = now()
+    WHERE id = uid_dev;
+  END IF;
+
+  -- Compte 3 : Association (Espoir Congo)
+  SELECT id INTO uid_asso FROM auth.users WHERE email = 'contact@espoircongo.cg' LIMIT 1;
+  IF uid_asso IS NULL THEN
+    uid_asso := 'c3333333-3333-3333-3333-333333333333';
+    INSERT INTO auth.users (id, instance_id, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, aud, role, created_at, updated_at)
+    VALUES (uid_asso, '00000000-0000-0000-0000-000000000000', 'contact@espoircongo.cg', crypt('Demo2026!ASSO', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}'::jsonb, '{"full_name":"Marien Ngouabi (Président Espoir Congo)","phone":"+242 06 600 00 03"}'::jsonb, 'authenticated', 'authenticated', now(), now());
+  ELSE
+    UPDATE auth.users SET
+      encrypted_password = crypt('Demo2026!ASSO', gen_salt('bf')),
+      raw_user_meta_data = '{"full_name":"Marien Ngouabi (Président Espoir Congo)","phone":"+242 06 600 00 03"}'::jsonb,
+      email_confirmed_at = COALESCE(email_confirmed_at, now()),
+      updated_at = now()
+    WHERE id = uid_asso;
+  END IF;
+
+  -- Compte 4 : Adhérente (Grace Moukassa)
+  SELECT id INTO uid_memb FROM auth.users WHERE email = 'adherent@espoircongo.cg' LIMIT 1;
+  IF uid_memb IS NULL THEN
+    uid_memb := 'd4444444-4444-4444-4444-444444444444';
+    INSERT INTO auth.users (id, instance_id, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, aud, role, created_at, updated_at)
+    VALUES (uid_memb, '00000000-0000-0000-0000-000000000000', 'adherent@espoircongo.cg', crypt('Demo2026!MEMBER', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}'::jsonb, '{"full_name":"Grace Moukassa (Adhérente Active)","phone":"+242 05 500 00 04"}'::jsonb, 'authenticated', 'authenticated', now(), now());
+  ELSE
+    UPDATE auth.users SET
+      encrypted_password = crypt('Demo2026!MEMBER', gen_salt('bf')),
+      raw_user_meta_data = '{"full_name":"Grace Moukassa (Adhérente Active)","phone":"+242 05 500 00 04"}'::jsonb,
+      email_confirmed_at = COALESCE(email_confirmed_at, now()),
+      updated_at = now()
+    WHERE id = uid_memb;
+  END IF;
+
+  -- 2. PROFILS
   INSERT INTO profiles (id, email, full_name, phone, platform_role) VALUES
   (uid_dgifn, 'dgifn.audit@finances.gouv.cg', 'DGIFN - Contrôle et Régulation Financière', '+242 06 600 00 01', 'super_admin'),
   (uid_dev, 'dev.support@assocongo.cg', 'Support Technique AssoCongo', '+242 06 600 00 02', 'super_admin'),
@@ -259,7 +285,7 @@ BEGIN
     full_name = EXCLUDED.full_name,
     platform_role = EXCLUDED.platform_role;
 
-  -- 3. Organisations
+  -- 3. ORGANISATIONS CONGOLAISES
   INSERT INTO organizations (
     id, name, acronym, slug, description, province, city, domains,
     status, is_verified, email, phone, receipt_number_prefix, last_receipt_sequence, theme_color
@@ -321,7 +347,7 @@ BEGIN
     status = EXCLUDED.status,
     is_verified = EXCLUDED.is_verified;
 
-  -- 4. Adhésions membres
+  -- 4. ADHÉSIONS MEMBRES OFFICIELS
   INSERT INTO organization_members (organization_id, user_id, role) VALUES
   (org_aec, uid_dgifn, 'super_admin'),
   (org_aec, uid_dev, 'super_admin'),
@@ -329,7 +355,14 @@ BEGIN
   (org_aec, uid_memb, 'member')
   ON CONFLICT (organization_id, user_id) DO UPDATE SET role = EXCLUDED.role;
 
-  -- 5. Campagnes
+  -- Rendre tous les autres utilisateurs authentifiés membres admin d'AEC pour qu'aucun compte ne soit vide
+  INSERT INTO organization_members (organization_id, user_id, role)
+  SELECT org_aec, u.id, 'admin'
+  FROM auth.users u
+  WHERE u.id NOT IN (uid_dgifn, uid_dev, uid_asso, uid_memb)
+  ON CONFLICT (organization_id, user_id) DO UPDATE SET role = 'admin';
+
+  -- 5. CAMPAGNES DE FINANCEMENT SOLIDAIRE
   INSERT INTO campaigns (
     id, organization_id, title, slug, description, goal_amount,
     current_amount, donors_count, status, category, is_featured
@@ -365,7 +398,7 @@ BEGIN
     current_amount = EXCLUDED.current_amount,
     donors_count = EXCLUDED.donors_count;
 
-  -- 6. Événements (avec ON CONFLICT sur id pour éviter l'erreur 23505)
+  -- 6. ÉVÉNEMENTS COMMUNAUTAIRES
   INSERT INTO events (
     id, organization_id, title, slug, description,
     venue, location, start_date, end_date,
@@ -424,5 +457,42 @@ BEGIN
     venue = EXCLUDED.venue,
     capacity = EXCLUDED.capacity;
 
-  RAISE NOTICE 'Base AssoCongo configurée avec succès sans récursion RLS et avec données idempotentes.';
+  -- 7. MEMBRES CRM (Espoir Congo)
+  DELETE FROM members WHERE organization_id = org_aec;
+  INSERT INTO members (
+    organization_id, first_name, last_name, email, phone, city, province,
+    membership_type, membership_fee, membership_status, card_number
+  ) VALUES
+  (org_aec, 'Grace', 'Moukassa', 'adherent@espoircongo.cg', '+242 05 500 00 04', 'Brazzaville', 'Brazzaville', 'volunteer', 10000, 'active', 'CG-2026-00101'),
+  (org_aec, 'Arsène', 'Loundou', 'arsene.loundou@gmail.com', '+242 06 612 34 56', 'Brazzaville', 'Brazzaville', 'member', 15000, 'active', 'CG-2026-00102'),
+  (org_aec, 'Carine', 'Massamba', 'carine.massamba@yahoo.fr', '+242 04 423 45 67', 'Brazzaville', 'Brazzaville', 'board', 25000, 'active', 'CG-2026-00103'),
+  (org_aec, 'Dieudonné', 'Nzamba', 'dieu.nzamba@hotmail.com', '+242 06 655 78 90', 'Brazzaville', 'Brazzaville', 'member', 15000, 'active', 'CG-2026-00104'),
+  (org_aec, 'Priscille', 'Bikoumou', 'priscille.b@gmail.com', '+242 05 533 11 22', 'Brazzaville', 'Brazzaville', 'volunteer', 10000, 'active', 'CG-2026-00105');
+
+  -- 8. TRANSACTIONS AVEC TRAÇABILITÉ MOBIL MONEY (MTN MoMo, Airtel Money, UBA)
+  DELETE FROM transactions WHERE organization_id = org_aec;
+  INSERT INTO transactions (
+    organization_id, type, amount, currency, status,
+    provider, provider_reference, description, created_at
+  ) VALUES
+  (org_aec, 'donation', 1000000, 'XAF', 'success', 'mtn_momo', 'MOMO-CG-2026-98441', 'Don mécène pour réfection école Bacongo via MTN MoMo (*105#)', now() - interval '1 hour'),
+  (org_aec, 'donation', 600000,  'XAF', 'success', 'airtel_money', 'AIRTEL-CG-2026-88210', 'Subvention RSE Fondation MTN Congo via Airtel Money (*128#)', now() - interval '4 hours'),
+  (org_aec, 'donation', 500000,  'XAF', 'success', 'cash', 'REC-CASH-BZV-0019', 'Versement espèces certifié Dr. Mabiala pour bloc sanitaire', now() - interval '1 day'),
+  (org_aec, 'payout',   1800000, 'XAF', 'success', 'other', 'VIR-UBA-BZV-2026-00412', 'Reversement bancaire UBA Congo : Règlement 120 tables-bancs Bacongo', now() - interval '2 days'),
+  (org_aec, 'membership_fee', 25000, 'XAF', 'success', 'airtel_money', 'AIRTEL-CG-2026-77810', 'Cotisation statutaire annuelle Bureau AEC 2026', now() - interval '3 days'),
+  (org_aec, 'donation', 25000,  'XAF', 'success', 'mtn_momo', 'MOMO-CG-2026-98124', 'Don citoyen particulier pour l''école Bacongo', now() - interval '4 days'),
+  (org_aec, 'tip', 5000, 'XAF', 'success', 'mtn_momo', 'MOMO-CG-2026-97112', 'Pourboire solidaire plateforme AssoCongo', now() - interval '1 day');
+
+  -- 9. DONS
+  DELETE FROM donations WHERE organization_id = org_aec;
+  INSERT INTO donations (
+    organization_id, campaign_id, amount, tip_amount, currency, donor_name, donor_email,
+    donor_phone, payment_provider, status, receipt_number, created_at
+  ) VALUES
+  (org_aec, camp_bacongo, 1000000, 5000, 'XAF', 'Entreprise Congo BTP Sarl', 'contact@congo-btp.cg', '+242 06 611 00 22', 'mtn_momo', 'completed', 'REC-2026-B101', now() - interval '1 hour'),
+  (org_aec, camp_bacongo, 600000,  3000, 'XAF', 'Fondation Entreprise Solidaire', 'rse@fondation.cg', '+242 04 422 33 44', 'airtel_money', 'completed', 'REC-2026-B102', now() - interval '4 hours'),
+  (org_aec, camp_bacongo, 500000,  2500, 'XAF', 'Dr. Christian Mabiala', 'mabiala.c@gmail.com', '+242 06 644 55 66', 'cash', 'completed', 'REC-2026-B103', now() - interval '1 day'),
+  (org_aec, camp_bacongo, 25000,   500,  'XAF', 'Jean-Pierre Moukouri', 'jp.moukouri@gmail.com', '+242 05 511 22 33', 'mtn_momo', 'completed', 'REC-2026-B104', now() - interval '4 days');
+
+  RAISE NOTICE 'Base AssoCongo configurée avec succès sans récursion RLS et avec données complètes.';
 END $$;
